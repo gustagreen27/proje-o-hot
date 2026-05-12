@@ -20,11 +20,12 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Venda realizada";
   const options = {
     body: data.body || "",
-    icon: "/icon-512.png",
+    icon: data.icon || "/icon-512.png",
     badge: "/icon-512.png",
     vibrate: [15, 40, 15],
     tag: data.tag || "hotmart-sale",
     renotify: true,
+    timestamp: Date.now(),
     data: { url: data.url || "/" },
   };
 

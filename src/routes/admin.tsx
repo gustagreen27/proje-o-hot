@@ -43,6 +43,8 @@ function AdminPage() {
   const [hp, setHp] = useState("HP1105748621");
   const [titleOverride, setTitleOverride] = useState("");
   const [bodyOverride, setBodyOverride] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [minutesAgo, setMinutesAgo] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [history, setHistory] = useState<IOSNotification[]>([]);
@@ -85,20 +87,27 @@ function AdminPage() {
     window.dispatchEvent(new CustomEvent("hotmart:new", { detail: n }));
   };
 
+  const composeBody = (val: string, id: string) =>
+    bodyOverride ||
+    (buyerName
+      ? `${buyerName} comprou — ${currency} ${val} - ${id}`
+      : `Você recebeu: ${currency} ${val} - ${id}`);
+
   const handleSend = async () => {
+    const body = composeBody(value, hp);
+    const title = titleOverride || TITLES[type];
     const n = buildCustom({
       type,
       value: `${currency} ${value}`,
       hp,
-      titleOverride,
-      bodyOverride,
+      titleOverride: title,
+      bodyOverride: body,
       receivedAt: Date.now() - minutesAgo * 60_000,
     });
     dispatch(n);
-    // dispara push real também
     try {
       const r = await sendPushFn({
-        data: { title: n.title, body: n.body, tag: n.id },
+        data: { title, body, tag: n.id, icon: avatarUrl || undefined },
       });
       if (r.total === 0) {
         toast.info("Adicionado ao app. Nenhum dispositivo inscrito para push real.");
@@ -125,14 +134,14 @@ function AdminPage() {
     toast.success(`Iniciando ${seqCount} push reais a cada ${seqIntervalSec}s`);
     for (let i = 0; i < seqCount; i++) {
       if (seqAbort.current) break;
-      const val = seqRandomValue
-        ? (50 + Math.random() * 900).toFixed(2)
-        : value;
+      const val = seqRandomValue ? (50 + Math.random() * 900).toFixed(2) : value;
       const id = randomHP();
       const title = titleOverride || TITLES[type];
-      const body = bodyOverride || `Você recebeu: ${currency} ${val} - ${id}`;
+      const body = composeBody(val, id);
       try {
-        await sendPushFn({ data: { title, body, tag: `seq-${Date.now()}-${i}` } });
+        await sendPushFn({
+          data: { title, body, tag: `seq-${Date.now()}-${i}`, icon: avatarUrl || undefined },
+        });
         // também aparece no app visual
         dispatch(
           buildCustom({
@@ -167,7 +176,13 @@ function AdminPage() {
         <Link to="/" className="rounded-full p-2 hover:bg-accent">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-lg font-semibold">Gerador de notificações</h1>
+        <h1 className="flex-1 text-lg font-semibold">Gerador de notificações</h1>
+        <Link
+          to="/setup"
+          className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent"
+        >
+          Como instalar
+        </Link>
       </header>
 
       <div className="mx-auto max-w-xl space-y-6 p-4">
@@ -277,6 +292,21 @@ function AdminPage() {
           </div>
 
           <Field label="ID HP" value={hp} onChange={setHp} className="mt-3" />
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Field
+              label="Nome do comprador"
+              value={buyerName}
+              onChange={setBuyerName}
+              placeholder="ex.: João S."
+            />
+            <Field
+              label="Avatar (URL do ícone)"
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              placeholder="https://..."
+            />
+          </div>
 
           <Field
             label="Título (opcional — sobrescreve)"
