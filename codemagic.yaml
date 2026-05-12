@@ -109,6 +109,12 @@ workflows:
         working_directory: capacitor-wrapper
         script: |
           npx cap sync ios
+          node ../scripts/sync-branding.mjs
+          node ../scripts/verify-ios-app-icon.mjs \
+            ios-resources/icon-only.png \
+            ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png \
+            ios/App/App/Assets.xcassets/AppIcon.appiconset \
+            ../public
 
       - name: Install CocoaPods
         working_directory: capacitor-wrapper/ios/App
