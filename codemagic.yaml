@@ -73,6 +73,20 @@ workflows:
         script: |
           npx cap sync ios
 
+      - name: Generate AppIcon from new logo (icon.png)
+        working_directory: capacitor-wrapper
+        script: |
+          if [ -f "ios-resources/icon.png" ]; then
+            npm i -D @capacitor/assets
+            npx capacitor-assets generate --ios \
+              --assetPath ios-resources \
+              --iconBackgroundColor "#000000" \
+              --splashBackgroundColor "#000000" || \
+              echo "capacitor-assets failed; AppIcon will fall back to default."
+          else
+            echo "No ios-resources/icon.png found; skipping AppIcon generation."
+          fi
+
       - name: Install CocoaPods
         working_directory: capacitor-wrapper/ios/App
         script: |
