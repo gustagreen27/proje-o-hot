@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Play, Send, Sparkles, Square, Trash2, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,7 +11,7 @@ import {
   type IOSNotification,
   type NotificationType,
 } from "@/lib/notifications";
-import { sendPush } from "@/lib/push.functions";
+import { isNative, sendLocalNotification } from "@/lib/NotificationService";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -56,8 +55,6 @@ function AdminPage() {
   const [seqRunning, setSeqRunning] = useState(false);
   const [seqProgress, setSeqProgress] = useState(0);
   const seqAbort = useRef(false);
-
-  const sendPushFn = useServerFn(sendPush);
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -105,17 +102,12 @@ function AdminPage() {
       receivedAt: Date.now() - minutesAgo * 60_000,
     });
     dispatch(n);
-    try {
-      const r = await sendPushFn({
-        data: { title, body, tag: n.id, icon: avatarUrl || undefined },
-      });
-      if (r.total === 0) {
-        toast.info("Adicionado ao app. Nenhum dispositivo inscrito para push real.");
-      } else {
-        toast.success(`Push real enviado para ${r.sent}/${r.total} dispositivo(s)`);
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Falha no push");
+    if (isNative()) {
+      const ok = await sendLocalNotification({ title, body, delayMs: 1500 });
+      if (ok) toast.success("Notificação local agendada no iPhone");
+      else toast.error("Permissão de notificação negada nos Ajustes do iPhone");
+    } else {
+      toast.info("Adicionado ao app. Notificação real só dentro do .ipa iOS.");
     }
   };
 
@@ -131,30 +123,25 @@ function AdminPage() {
     seqAbort.current = false;
     setSeqRunning(true);
     setSeqProgress(0);
-    toast.success(`Iniciando ${seqCount} push reais a cada ${seqIntervalSec}s`);
+    toast.success(`Iniciando ${seqCount} notificações a cada ${seqIntervalSec}s`);
     for (let i = 0; i < seqCount; i++) {
       if (seqAbort.current) break;
       const val = seqRandomValue ? (50 + Math.random() * 900).toFixed(2) : value;
       const id = randomHP();
       const title = titleOverride || TITLES[type];
       const body = composeBody(val, id);
-      try {
-        await sendPushFn({
-          data: { title, body, tag: `seq-${Date.now()}-${i}`, icon: avatarUrl || undefined },
-        });
-        // também aparece no app visual
-        dispatch(
-          buildCustom({
-            type,
-            value: `${currency} ${val}`,
-            hp: id,
-            titleOverride: title,
-            bodyOverride: body,
-          }),
-        );
-      } catch (e) {
-        // continua
+      if (isNative()) {
+        await sendLocalNotification({ title, body, delayMs: 800 }).catch(() => undefined);
       }
+      dispatch(
+        buildCustom({
+          type,
+          value: `${currency} ${val}`,
+          hp: id,
+          titleOverride: title,
+          bodyOverride: body,
+        }),
+      );
       setSeqProgress(i + 1);
       if (i < seqCount - 1) {
         await new Promise((r) => setTimeout(r, seqIntervalSec * 1000));
