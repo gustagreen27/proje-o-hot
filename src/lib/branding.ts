@@ -19,7 +19,9 @@ export function loadBranding(): Branding {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULT_BRANDING;
     const parsed = JSON.parse(raw) as Partial<Branding>;
-    return { ...DEFAULT_BRANDING, ...parsed };
+    const merged = { ...DEFAULT_BRANDING, ...parsed };
+    if (!merged.platformLogo) merged.platformLogo = DEFAULT_BRANDING.platformLogo;
+    return merged;
   } catch {
     return DEFAULT_BRANDING;
   }
