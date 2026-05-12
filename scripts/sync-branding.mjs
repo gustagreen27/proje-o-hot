@@ -108,6 +108,7 @@ const escapeHtml = (s) =>
 // ---------- copy logo + splash into ios-resources ----------
 {
   const iosDir = resolve(root, "capacitor-wrapper/ios-resources");
+  rmSync(iosDir, { recursive: true, force: true });
   mkdirSync(iosDir, { recursive: true });
   mkdirSync(resolve(iosDir, "ios"), { recursive: true });
   copyFileSync(logoSrc, resolve(iosDir, "icon.png"));
@@ -115,6 +116,8 @@ const escapeHtml = (s) =>
   // Keeping both prevents the generated iOS icon from falling back to any template/default asset.
   copyFileSync(logoSrc, resolve(iosDir, "icon-only.png"));
   copyFileSync(logoSrc, resolve(iosDir, "ios/icon.png"));
+  copyFileSync(logoSrc, resolve(iosDir, "notification-icon.png"));
+  copyFileSync(logoSrc, resolve(iosDir, "ios/notification-icon.png"));
   copyFileSync(splashSrc, resolve(iosDir, "splash.png"));
   // dark variant for capacitor-assets (same image, ok for now)
   copyFileSync(splashSrc, resolve(iosDir, "splash-dark.png"));
