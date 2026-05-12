@@ -111,15 +111,26 @@ export function buildCustom(input: {
   hp: string;
   name?: string;
   product?: string;
+  titleOverride?: string;
+  bodyOverride?: string;
+  receivedAt?: number;
 }): IOSNotification {
   return {
     id: crypto.randomUUID(),
-    title: TITLES[input.type],
-    body: `Você recebeu: ${input.value} - ${input.hp}`,
+    title: input.titleOverride?.trim() || TITLES[input.type],
+    body: input.bodyOverride?.trim() || `Você recebeu: ${input.value} - ${input.hp}`,
     appName: "Hotmart",
-    receivedAt: Date.now(),
+    receivedAt: input.receivedAt ?? Date.now(),
     type: input.type,
   };
+}
+
+export function removeFromHistory(id: string) {
+  const next = loadHistory().filter((n) => n.id !== id);
+  saveHistory(next);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hotmart:remove", { detail: id }));
+  }
 }
 
 export { NAMES, PRODUCTS };

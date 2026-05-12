@@ -36,8 +36,21 @@ export function NotificationStack({ autoSimulate, soundOn }: Props) {
       if (soundOn) playDing();
       vibrate();
     }
+    function onRemove(e: Event) {
+      const id = (e as CustomEvent<string>).detail;
+      setList((prev) => prev.filter((n) => n.id !== id));
+    }
+    function onClear() {
+      setList([]);
+    }
     window.addEventListener("hotmart:new", onNew as EventListener);
-    return () => window.removeEventListener("hotmart:new", onNew as EventListener);
+    window.addEventListener("hotmart:remove", onRemove as EventListener);
+    window.addEventListener("hotmart:clear", onClear as EventListener);
+    return () => {
+      window.removeEventListener("hotmart:new", onNew as EventListener);
+      window.removeEventListener("hotmart:remove", onRemove as EventListener);
+      window.removeEventListener("hotmart:clear", onClear as EventListener);
+    };
   }, [soundOn]);
 
   // auto-sim
