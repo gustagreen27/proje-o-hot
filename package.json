@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build --config vite.capacitor.config.ts",
+    "build:ssr": "vite build",
     "build:dev": "vite build --mode development",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0",
     "lint": "eslint .",
     "format": "prettier --write .",
     "cap:sync": "npm run build && cd capacitor-wrapper && npm install && npm run cap:sync",

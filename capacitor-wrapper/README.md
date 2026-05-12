@@ -4,7 +4,7 @@ App iOS nativo gerado com Capacitor. **Sem WebView remota, sem APNs, sem Firebas
 
 ## Stack
 
-- TanStack Start (Vite) → bundle estático em `.output/public`
+- Vite SPA → bundle estático em `dist/index.html`
 - Capacitor 6 (iOS) → embute o bundle em `capacitor-wrapper/dist`
 - `@capacitor/local-notifications` + `@capacitor/haptics`
 
@@ -31,9 +31,9 @@ No Xcode: selecione um device real, ajuste signing e rode.
 O `codemagic.yaml` já faz tudo automaticamente:
 
 1. `npm install` na raiz
-2. `npm run build` (Vite)
+2. `npm run build` (SPA estático em `dist/`)
 3. `npm install` em `capacitor-wrapper/`
-4. Copia `.output/public` → `capacitor-wrapper/dist`
+4. Copia `dist/` → `capacitor-wrapper/dist`
 5. `npx cap add ios` (se necessário) + `npx cap sync ios`
 6. `pod install`
 7. Build assinado Ad Hoc (.ipa)
@@ -54,3 +54,4 @@ Basta dar push em `main`.
 - `appId`: `app.plantain7502.soybean5714`
 - `appName`: `Gucmart`
 - `webDir`: `dist` (assets locais — sem `server.url`)
+- `npm run build` gera obrigatoriamente `dist/index.html`
