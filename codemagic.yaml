@@ -112,24 +112,13 @@ workflows:
           npx cap sync ios
           node ../scripts/sync-branding.mjs
           PLIST="ios/App/App/Info.plist"
-          # Ensure CFBundleIconName = "AppIcon" so iOS resolves the AppIcon.appiconset.
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$PLIST" \
+          # Modern asset-catalog flow: only CFBundleIconName is required.
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$PLIST"
-          # Ensure CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconName = "AppIcon"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons dict" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon dict" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName AppIcon" "$PLIST" \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName string AppIcon" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad dict" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon dict" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconName AppIcon" "$PLIST" \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconName string AppIcon" "$PLIST"
-          # Remove any legacy keys that would compete with the asset catalog.
+          # Remove legacy keys that would compete with AppIcon.appiconset.
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFiles" "$PLIST" 2>/dev/null || true
-          echo "--- Info.plist icon keys ---"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" || true
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" "$PLIST" || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST"
           node ../scripts/verify-ios-app-icon.mjs \
             ios-resources/icon-only.png \
             ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png \
