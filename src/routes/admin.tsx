@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Sparkles, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, Play, Send, Sparkles, Square, Trash2, X, Zap } from "lucide-react";
+import { toast } from "sonner";
 import {
   TITLES,
   buildCustom,
@@ -10,6 +12,7 @@ import {
   type IOSNotification,
   type NotificationType,
 } from "@/lib/notifications";
+import { sendPush } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
