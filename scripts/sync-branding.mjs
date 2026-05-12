@@ -173,6 +173,8 @@ async function writeIosAppIconSet() {
   console.log("[branding] copied logo+splash -> capacitor-wrapper/ios-resources/");
 }
 
+await writeIosAppIconSet();
+
 // ---------- in-app dashboard logo (used by src/lib/branding.ts default) ----------
 {
   const dest = resolve(root, "src/assets/platform-logo.jpeg");
