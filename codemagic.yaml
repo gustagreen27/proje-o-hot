@@ -43,6 +43,10 @@ workflows:
         script: |
           npm ci || npm install
 
+      - name: Sync branding (writes index.html, manifest, capacitor.config.ts, ios-resources/, web icons)
+        script: |
+          npm run branding:sync
+
       - name: Build web SPA for Capacitor
         script: |
           npm run build
@@ -99,14 +103,17 @@ workflows:
         script: |
           pod install --repo-update
 
-      - name: Set bundle id in Xcode project
+      - name: Set bundle id and display name in Xcode project (from branding.config.json)
         script: |
           set -e
+          APP_NAME=$(node -e "console.log(require('./branding.config.json').appName)")
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" \
             capacitor-wrapper/ios/App/App/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Gucmart" \
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" \
             capacitor-wrapper/ios/App/App/Info.plist || \
-            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Gucmart" \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $APP_NAME" \
+            capacitor-wrapper/ios/App/App/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" \
             capacitor-wrapper/ios/App/App/Info.plist || true
           cd capacitor-wrapper/ios/App
           xcode-project use-profiles
