@@ -1,8 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import wallpaperUrl from "@/assets/wallpaper.jpg";
 import { NotificationStack } from "@/components/NotificationStack";
-import { Settings2 } from "lucide-react";
+import { Bell, BellOff, Send, Settings2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  getExistingSubscription,
+  isPushSupported,
+  subscribeToPush,
+} from "@/lib/push-client";
+import { sendPush, subscribePush, unsubscribePush } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/")({
   component: LockScreen,
@@ -26,27 +34,93 @@ export const Route = createFileRoute("/")({
 });
 
 function LockScreen() {
-  const [now, setNow] = useState(new Date());
+  // mounted gate evita hydration mismatch do relógio
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
   const [autoSim, setAutoSim] = useState(true);
   const [sound, setSound] = useState(true);
+  const [pushOn, setPushOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const subscribeFn = useServerFn(subscribePush);
+  const unsubscribeFn = useServerFn(unsubscribePush);
+  const sendFn = useServerFn(sendPush);
 
   useEffect(() => {
-    const i = setInterval(() => setNow(new Date()), 1000 * 30);
+    setMounted(true);
+    setNow(new Date());
+    const i = setInterval(() => setNow(new Date()), 30_000);
+    getExistingSubscription().then((s) => setPushOn(!!s));
     return () => clearInterval(i);
   }, []);
 
-  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const time = now
+    ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : "";
   const date = now
-    .toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
-    .replace(/^./, (c) => c.toUpperCase());
+    ? now
+        .toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+        .replace(/^./, (c) => c.toUpperCase())
+    : "";
+
+  const togglePush = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (pushOn) {
+        const sub = await getExistingSubscription();
+        if (sub) {
+          await unsubscribeFn({ data: { endpoint: sub.endpoint } });
+          await sub.unsubscribe();
+        }
+        setPushOn(false);
+        toast.success("Notificações desativadas");
+      } else {
+        if (!isPushSupported()) {
+          toast.error(
+            "Push não suportado. No iPhone: adicione à Tela de Início e abra como app.",
+          );
+          return;
+        }
+        const sub = await subscribeToPush();
+        const json = sub.toJSON() as any;
+        await subscribeFn({
+          data: {
+            endpoint: json.endpoint,
+            keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+          },
+        });
+        setPushOn(true);
+        toast.success("Notificações ativadas!");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao alterar notificações");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendTest = async () => {
+    try {
+      const r = await sendFn({
+        data: {
+          title: "Venda realizada com Cartão de Crédito",
+          body: "Você recebeu: US$ 360.24 - HP1105748621",
+          tag: "hotmart-test",
+        },
+      });
+      toast.success(`Enviado para ${r.sent}/${r.total} dispositivo(s)`);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao enviar");
+    }
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="lock-wallpaper" style={{ backgroundImage: `url(${wallpaperUrl})` }} />
 
-      {/* status bar */}
       <div className="flex items-center justify-between px-7 pt-3 text-[15px] font-semibold">
-        <span>{time}</span>
+        <span suppressHydrationWarning>{time || "\u00A0"}</span>
         <span className="flex items-center gap-1.5 opacity-90">
           <span className="text-xs">5G</span>
           <span className="inline-block h-2.5 w-6 rounded-[3px] border border-white/80 px-[1px]">
@@ -55,38 +129,58 @@ function LockScreen() {
         </span>
       </div>
 
-      {/* time + date */}
       <header className="mt-6 flex flex-col items-center">
-        <p className="text-[15px] font-medium opacity-90">{date}</p>
-        <h1 className="-mt-1 text-[88px] font-light leading-none tracking-tight">{time}</h1>
+        <p className="text-[15px] font-medium opacity-90" suppressHydrationWarning>
+          {date || "\u00A0"}
+        </p>
+        <h1
+          className="-mt-1 text-[88px] font-light leading-none tracking-tight"
+          suppressHydrationWarning
+        >
+          {time || "\u00A0"}
+        </h1>
       </header>
 
-      <section className="mt-8 pb-32">
+      <section className="mt-8 pb-40">
         <NotificationStack autoSimulate={autoSim} soundOn={sound} />
       </section>
 
-      {/* bottom controls */}
       <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-3 pb-6">
-        <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs backdrop-blur-xl">
-          <button
-            onClick={() => setAutoSim((v) => !v)}
-            className={`rounded-full px-3 py-1 ${autoSim ? "bg-white text-black" : "text-white/80"}`}
-          >
-            Auto
-          </button>
-          <button
-            onClick={() => setSound((v) => !v)}
-            className={`rounded-full px-3 py-1 ${sound ? "bg-white text-black" : "text-white/80"}`}
-          >
-            Som
-          </button>
-          <Link
-            to="/admin"
-            className="flex items-center gap-1 rounded-full px-3 py-1 text-white/80"
-          >
-            <Settings2 className="h-3.5 w-3.5" /> Admin
-          </Link>
-        </div>
+        {mounted && (
+          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs backdrop-blur-xl">
+            <button
+              onClick={togglePush}
+              disabled={busy}
+              className={`flex items-center gap-1 rounded-full px-3 py-1 ${
+                pushOn ? "bg-white text-black" : "text-white/80"
+              }`}
+            >
+              {pushOn ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+              Push
+            </button>
+            <button
+              onClick={sendTest}
+              className="flex items-center gap-1 rounded-full px-3 py-1 text-white/80"
+            >
+              <Send className="h-3.5 w-3.5" /> Enviar
+            </button>
+            <button
+              onClick={() => setAutoSim((v) => !v)}
+              className={`rounded-full px-3 py-1 ${autoSim ? "bg-white text-black" : "text-white/80"}`}
+            >
+              Auto
+            </button>
+            <button
+              onClick={() => setSound((v) => !v)}
+              className={`rounded-full px-3 py-1 ${sound ? "bg-white text-black" : "text-white/80"}`}
+            >
+              Som
+            </button>
+            <Link to="/admin" className="flex items-center gap-1 rounded-full px-3 py-1 text-white/80">
+              <Settings2 className="h-3.5 w-3.5" /> Admin
+            </Link>
+          </div>
+        )}
         <div className="h-1 w-32 rounded-full bg-white/80" />
       </div>
     </main>
