@@ -115,6 +115,9 @@ workflows:
             ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png \
             ios/App/App/Assets.xcassets/AppIcon.appiconset \
             ../public
+          node ../scripts/verify-ios-icon-uniqueness.mjs \
+            ios/App/App/Assets.xcassets \
+            ios/App/App/Info.plist
 
       - name: Install CocoaPods
         working_directory: capacitor-wrapper/ios/App
