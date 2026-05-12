@@ -6,7 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // Build SPA estático para Capacitor iOS.
 // Gera obrigatoriamente `dist/index.html` e assets locais, sem SSR e sem server.url.
 export default defineConfig({
-  plugins: [tsconfigPaths(), react(), tailwindcss()],
+  plugins: [tsconfigPaths({ ignoreConfigErrors: true }), react(), tailwindcss()],
   appType: "spa",
   base: "./",
   build: {
