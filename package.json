@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "cap:sync": "cd capacitor-wrapper && npm install && npx cap sync ios",
+    "cap:open": "cd capacitor-wrapper && npx cap open ios"
   },
   "dependencies": {
     "@capacitor/core": "^8.3.3",
