@@ -76,6 +76,36 @@ workflows:
           cd capacitor-wrapper/ios/App
           xcode-project use-profiles
 
+      - name: Enable Push Notifications entitlement (APNs)
+        script: |
+          set -e
+          ENT="capacitor-wrapper/ios/App/App/App.entitlements"
+          mkdir -p "$(dirname "$ENT")"
+          if [ ! -f "$ENT" ]; then
+            cat > "$ENT" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>aps-environment</key>
+              <string>production</string>
+          </dict>
+          </plist>
+          PLIST
+          else
+            /usr/libexec/PlistBuddy -c "Delete :aps-environment" "$ENT" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :aps-environment string production" "$ENT"
+          fi
+          # Wire entitlement file + capability into the Xcode project (idempotent)
+          PROJ="capacitor-wrapper/ios/App/App.xcodeproj/project.pbxproj"
+          if ! grep -q "App/App.entitlements" "$PROJ"; then
+            /usr/bin/sed -i '' \
+              's|PRODUCT_BUNDLE_IDENTIFIER = .*;|&\n				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;|' \
+              "$PROJ" || true
+          fi
+          echo "Entitlement file:"
+          cat "$ENT"
+
       - name: Build signed Ad Hoc .ipa
         script: |
           set -e

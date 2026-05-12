@@ -10,7 +10,13 @@ import {
   isPushSupported,
   subscribeToPush,
 } from "@/lib/push-client";
-import { sendPush, subscribePush, unsubscribePush } from "@/lib/push.functions";
+import { initNativePush, isNativeApp } from "@/lib/native-push-client";
+import {
+  registerDeviceToken,
+  sendPush,
+  subscribePush,
+  unsubscribePush,
+} from "@/lib/push.functions";
 
 export const Route = createFileRoute("/")({
   component: LockScreen,
@@ -45,14 +51,23 @@ function LockScreen() {
   const subscribeFn = useServerFn(subscribePush);
   const unsubscribeFn = useServerFn(unsubscribePush);
   const sendFn = useServerFn(sendPush);
+  const registerNativeFn = useServerFn(registerDeviceToken);
 
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
     const i = setInterval(() => setNow(new Date()), 30_000);
     getExistingSubscription().then((s) => setPushOn(!!s));
+    // Native (.ipa via Capacitor): auto-register with APNs on first launch.
+    if (isNativeApp()) {
+      initNativePush((input) => registerNativeFn({ data: input }))
+        .then((r) => {
+          if (r.ok) setPushOn(true);
+        })
+        .catch((e) => console.error("[native-push] init failed", e));
+    }
     return () => clearInterval(i);
-  }, []);
+  }, [registerNativeFn]);
 
   const time = now
     ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
@@ -68,6 +83,10 @@ function LockScreen() {
     setBusy(true);
     try {
       if (pushOn) {
+        if (isNativeApp()) {
+          toast.info("Para desativar push no app, use os Ajustes do iPhone.");
+          return;
+        }
         const sub = await getExistingSubscription();
         if (sub) {
           await unsubscribeFn({ data: { endpoint: sub.endpoint } });
@@ -76,6 +95,16 @@ function LockScreen() {
         setPushOn(false);
         toast.success("Notificações desativadas");
       } else {
+        if (isNativeApp()) {
+          const r = await initNativePush((input) => registerNativeFn({ data: input }));
+          if (r.ok) {
+            setPushOn(true);
+            toast.success("Notificações nativas ativadas!");
+          } else {
+            toast.error(`Falha APNs: ${r.reason ?? "desconhecido"}`);
+          }
+          return;
+        }
         if (!isPushSupported()) {
           toast.error(
             "Push não suportado. No iPhone: adicione à Tela de Início e abra como app.",
