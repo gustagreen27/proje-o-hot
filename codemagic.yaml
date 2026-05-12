@@ -81,18 +81,23 @@ workflows:
         working_directory: capacitor-wrapper
         script: |
           set -e
+          node ../scripts/sync-branding.mjs
           test -f ios-resources/icon.png  || { echo "Missing ios-resources/icon.png";  exit 1; }
           test -f ios-resources/icon-only.png  || { echo "Missing ios-resources/icon-only.png";  exit 1; }
           test -f ios-resources/ios/icon.png  || { echo "Missing ios-resources/ios/icon.png";  exit 1; }
+          test -f ios-resources/notification-icon.png  || { echo "Missing ios-resources/notification-icon.png";  exit 1; }
           test -f ios-resources/splash.png || { echo "Missing ios-resources/splash.png"; exit 1; }
           npx capacitor-assets generate --ios \
             --assetPath ios-resources \
             --iconBackgroundColor "#000000" \
             --splashBackgroundColor "#000000"
+          node ../scripts/sync-branding.mjs
           ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
           APP_ICON="$ICON_SET/AppIcon-512@2x.png"
+          NOTIFICATION_ICON="ios/App/App/Assets.xcassets/NotificationIcon.imageset/notification-icon.png"
           ls -la "$ICON_SET" | head -30
           test -f "$APP_ICON" || { echo "AppIcon generation failed"; exit 1; }
+          test -f "$NOTIFICATION_ICON" || { echo "Notification icon asset missing"; exit 1; }
           test -f "$ICON_SET/Contents.json" || { echo "AppIcon Contents.json missing"; exit 1; }
           node ../scripts/verify-ios-app-icon.mjs \
             ios-resources/icon-only.png \
