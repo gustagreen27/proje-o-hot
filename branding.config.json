@@ -1,0 +1,10 @@
+{
+  "appName": "Hotmart",
+  "notificationName": "Hotmart",
+  "shortName": "Hotmart",
+  "description": "Dashboard premium com notificações locais nativas no iPhone.",
+  "themeColor": "#000000",
+  "backgroundColor": "#000000",
+  "logo": "branding/logo.png",
+  "splash": "branding/splash.png"
+}
