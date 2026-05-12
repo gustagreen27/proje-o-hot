@@ -13,26 +13,77 @@ export const DEFAULT_BRANDING: Branding = {
   platformLogo: defaultLogo,
 };
 
-export function loadBranding(): Branding {
-  if (typeof window === "undefined") return DEFAULT_BRANDING;
+// Lazy-load Capacitor Preferences (available only in native build).
+// Falls back gracefully on web.
+async function getPreferences(): Promise<typeof import("@capacitor/preferences").Preferences | null> {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_BRANDING;
-    const parsed = JSON.parse(raw) as Partial<Branding>;
-    const merged = { ...DEFAULT_BRANDING, ...parsed };
-    if (!merged.platformLogo) merged.platformLogo = DEFAULT_BRANDING.platformLogo;
-    return merged;
+    const mod = await import("@capacitor/preferences");
+    return mod.Preferences;
   } catch {
-    return DEFAULT_BRANDING;
+    return null;
   }
 }
 
-export function saveBranding(b: Branding) {
+function readLocal(): Branding | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<Branding>;
+    return { ...DEFAULT_BRANDING, ...parsed };
+  } catch {
+    return null;
+  }
+}
+
+function writeLocal(b: Branding) {
   try {
     localStorage.setItem(KEY, JSON.stringify(b));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+export function loadBranding(): Branding {
+  const local = readLocal();
+  return local ?? DEFAULT_BRANDING;
+}
+
+async function loadBrandingAsync(): Promise<Branding> {
+  // Try native Preferences first (survives reinstall on iOS via app sandbox), then localStorage.
+  const Preferences = await getPreferences();
+  if (Preferences) {
+    try {
+      const { value } = await Preferences.get({ key: KEY });
+      if (value) {
+        const parsed = JSON.parse(value) as Partial<Branding>;
+        const merged = { ...DEFAULT_BRANDING, ...parsed };
+        writeLocal(merged); // mirror to localStorage backup
+        return merged;
+      }
+    } catch {
+      /* fall through to localStorage */
+    }
+  }
+  return readLocal() ?? DEFAULT_BRANDING;
+}
+
+export function saveBranding(b: Branding) {
+  writeLocal(b);
+  // Best-effort native persistence
+  void (async () => {
+    const Preferences = await getPreferences();
+    if (!Preferences) return;
+    try {
+      await Preferences.set({ key: KEY, value: JSON.stringify(b) });
+    } catch {
+      /* ignore */
+    }
+  })();
+  try {
     window.dispatchEvent(new CustomEvent("branding:update", { detail: b }));
   } catch {
-    // ignore
+    /* ignore */
   }
 }
 
@@ -40,7 +91,10 @@ export function useBranding(): [Branding, (b: Branding) => void] {
   const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
 
   useEffect(() => {
+    // Sync read for instant paint, then async upgrade from native Preferences.
     setBranding(loadBranding());
+    void loadBrandingAsync().then((b) => setBranding(b));
+
     const onUpdate = (e: Event) => {
       const detail = (e as CustomEvent<Branding>).detail;
       if (detail) setBranding(detail);

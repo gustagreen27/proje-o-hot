@@ -6,7 +6,8 @@
   "scripts": {
     "cap:add:ios": "cap add ios",
     "cap:copy-web": "node ./scripts/copy-web.mjs",
-    "cap:sync": "npm run cap:copy-web && cap sync ios",
+    "cap:assets": "capacitor-assets generate --ios --assetPath ios-resources --iconBackgroundColor #000000 --splashBackgroundColor #000000",
+    "cap:sync": "npm run cap:copy-web && cap sync ios && npm run cap:assets",
     "cap:open:ios": "cap open ios",
     "ios:build": "npm run cap:sync && cap open ios"
   },
@@ -17,10 +18,12 @@
     "@capacitor/haptics": "^6.0.1",
     "@capacitor/ios": "^6.1.2",
     "@capacitor/local-notifications": "^6.1.0",
+    "@capacitor/preferences": "^6.0.3",
     "@capacitor/splash-screen": "^6.0.2",
     "@capacitor/status-bar": "^6.0.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^6.1.2"
   }
 }
