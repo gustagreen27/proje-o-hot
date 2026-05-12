@@ -1,6 +1,6 @@
 {
-  "name": "Hotmart Notify",
-  "short_name": "Hotmart",
+  "name": "Venda Realizada",
+  "short_name": "Vendas",
   "description": "Notificações de vendas em tempo real",
   "start_url": "/",
   "display": "standalone",
