@@ -12,6 +12,13 @@ import {
 } from "@/lib/push-client";
 import { initNativePush, isNativeApp } from "@/lib/native-push-client";
 import {
+  hapticImpact,
+  hapticSuccess,
+  initNotifications,
+  isNative,
+  sendLocalNotification,
+} from "@/lib/NotificationService";
+import {
   registerDeviceToken,
   sendPush,
   subscribePush,
