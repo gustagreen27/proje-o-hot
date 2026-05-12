@@ -61,6 +61,44 @@ if (!existsSync(splashSrc)) throw new Error(`[branding] missing ${cfg.splash}`);
 const escapeHtml = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+async function writePng(size, dest) {
+  const require = createRequire(import.meta.url);
+  const sharp = require("sharp");
+  const png = await sharp(logoSrc)
+    .resize(size, size, { fit: "fill" })
+    .removeAlpha()
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+  writeFileSync(dest, png);
+}
+
+async function writeIosAppIconSet() {
+  const assetsDir = resolve(root, "capacitor-wrapper/ios/App/App/Assets.xcassets");
+  if (!existsSync(assetsDir)) return;
+  const iconSet = resolve(assetsDir, "AppIcon.appiconset");
+  rmSync(iconSet, { recursive: true, force: true });
+  mkdirSync(iconSet, { recursive: true });
+  const entries = [
+    { idiom: "iphone", size: "20x20", scale: "2x", filename: "AppIcon-20@2x.png", px: 40 },
+    { idiom: "iphone", size: "20x20", scale: "3x", filename: "AppIcon-20@3x.png", px: 60 },
+    { idiom: "iphone", size: "29x29", scale: "2x", filename: "AppIcon-29@2x.png", px: 58 },
+    { idiom: "iphone", size: "29x29", scale: "3x", filename: "AppIcon-29@3x.png", px: 87 },
+    { idiom: "iphone", size: "40x40", scale: "2x", filename: "AppIcon-40@2x.png", px: 80 },
+    { idiom: "iphone", size: "40x40", scale: "3x", filename: "AppIcon-40@3x.png", px: 120 },
+    { idiom: "iphone", size: "60x60", scale: "2x", filename: "AppIcon-60@2x.png", px: 120 },
+    { idiom: "iphone", size: "60x60", scale: "3x", filename: "AppIcon-60@3x.png", px: 180 },
+    { idiom: "ios-marketing", size: "1024x1024", scale: "1x", filename: "AppIcon-1024.png", px: 1024 },
+  ];
+  for (const entry of entries) await writePng(entry.px, resolve(iconSet, entry.filename));
+  writeFileSync(resolve(iconSet, "Contents.json"), JSON.stringify({ images: entries.map(({ px, ...entry }) => entry), info: { author: "xcode", version: 1 } }, null, 2) + "\n");
+  const notificationSet = resolve(assetsDir, "NotificationIcon.imageset");
+  rmSync(notificationSet, { recursive: true, force: true });
+  mkdirSync(notificationSet, { recursive: true });
+  await writePng(1024, resolve(notificationSet, "notification-icon.png"));
+  writeFileSync(resolve(notificationSet, "Contents.json"), JSON.stringify({ images: [{ idiom: "universal", filename: "notification-icon.png", scale: "1x" }], info: { author: "xcode", version: 1 } }, null, 2) + "\n");
+  console.log("[branding] wrote AppIcon.appiconset + NotificationIcon.imageset from branding logo");
+}
+
 // ---------- index.html ----------
 {
   const p = resolve(root, "index.html");
