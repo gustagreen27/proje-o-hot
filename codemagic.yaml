@@ -93,7 +93,7 @@ workflows:
           APP_ICON="$ICON_SET/AppIcon-512@2x.png"
           ls -la "$ICON_SET" | head -30
           test -f "$APP_ICON" || { echo "AppIcon generation failed"; exit 1; }
-          cmp -s ios-resources/icon-only.png "$APP_ICON" || { echo "Generated AppIcon does not match branding icon"; exit 1; }
+          node ../scripts/verify-ios-app-icon.mjs ios-resources/icon-only.png "$APP_ICON"
 
       - name: Re-sync iOS after asset generation
         working_directory: capacitor-wrapper
