@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
+import defaultLogo from "@/assets/platform-logo.jpeg";
 
 export type Branding = {
   platformName: string;
-  platformLogo: string | null; // dataURL
+  platformLogo: string | null; // dataURL or asset url
 };
 
 const KEY = "gucmart:branding:v1";
 
 export const DEFAULT_BRANDING: Branding = {
   platformName: "Gucmart",
-  platformLogo: null,
+  platformLogo: defaultLogo,
 };
 
 export function loadBranding(): Branding {
@@ -18,7 +19,9 @@ export function loadBranding(): Branding {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULT_BRANDING;
     const parsed = JSON.parse(raw) as Partial<Branding>;
-    return { ...DEFAULT_BRANDING, ...parsed };
+    const merged = { ...DEFAULT_BRANDING, ...parsed };
+    if (!merged.platformLogo) merged.platformLogo = DEFAULT_BRANDING.platformLogo;
+    return merged;
   } catch {
     return DEFAULT_BRANDING;
   }

@@ -4,7 +4,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // O conteúdo da WebView vem de `webDir` (assets locais embutidos no .ipa).
 const config: CapacitorConfig = {
   appId: "app.plantain7502.soybean5714",
-  appName: "Hotmart",
+  appName: "Gucmart",
   webDir: "dist",
 
   ios: {
