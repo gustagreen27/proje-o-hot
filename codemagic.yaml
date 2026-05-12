@@ -148,6 +148,31 @@ workflows:
           cd capacitor-wrapper/ios/App
           xcode-project use-profiles
 
+      - name: 🔒 Final icon lock (must be the LAST step before build)
+        script: |
+          set -e
+          PLIST="capacitor-wrapper/ios/App/App/Info.plist"
+          echo "===== INFO.PLIST BEFORE LOCK ====="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" || true
+          grep -n "CFBundleIcon" "$PLIST" || true
+
+          echo "🔒 Locking CFBundleIconName = AppIcon ..."
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFiles" "$PLIST" 2>/dev/null || true
+
+          echo "===== INFO.PLIST AFTER LOCK ====="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST"
+          grep -n "CFBundleIcon" "$PLIST" || true
+
+          FINAL=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" 2>/dev/null || echo "")
+          if [ "$FINAL" != "AppIcon" ]; then
+            echo "❌ CFBundleIconName WAS OVERWRITTEN (got: '$FINAL')"
+            exit 1
+          fi
+          echo "✅ Icon lock confirmed: CFBundleIconName=AppIcon"
+
       - name: Build signed Ad Hoc .ipa
         script: |
           set -e
