@@ -31,6 +31,7 @@ const sendSchema = z.object({
   body: z.string().min(1).max(500),
   url: z.string().optional(),
   tag: z.string().optional(),
+  icon: z.string().optional(),
 });
 
 export const sendPush = createServerFn({ method: "POST" })
