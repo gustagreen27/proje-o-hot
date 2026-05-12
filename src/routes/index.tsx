@@ -222,6 +222,12 @@ function LockScreen() {
               <Send className="h-3.5 w-3.5" /> Enviar
             </button>
             <button
+              onClick={sendLocal}
+              className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-white"
+            >
+              <Bell className="h-3.5 w-3.5" /> Notificar iOS
+            </button>
+            <button
               onClick={() => setAutoSim((v) => !v)}
               className={`rounded-full px-3 py-1 ${autoSim ? "bg-white text-black" : "text-white/80"}`}
             >
