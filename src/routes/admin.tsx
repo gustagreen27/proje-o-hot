@@ -43,6 +43,8 @@ function AdminPage() {
   const [hp, setHp] = useState("HP1105748621");
   const [titleOverride, setTitleOverride] = useState("");
   const [bodyOverride, setBodyOverride] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [minutesAgo, setMinutesAgo] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [history, setHistory] = useState<IOSNotification[]>([]);
