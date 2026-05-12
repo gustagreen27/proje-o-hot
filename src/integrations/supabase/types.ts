@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      device_tokens: {
+        Row: {
+          bundle_id: string | null
+          created_at: string
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+        }
+        Insert: {
+          bundle_id?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+        }
+        Update: {
+          bundle_id?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
