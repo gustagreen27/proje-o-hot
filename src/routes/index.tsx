@@ -194,6 +194,8 @@ function Dashboard() {
         </div>
       </section>
 
+      <NotificationCenter />
+
       <BottomTabBar active={tab} onChange={setTab} />
     </main>
   );
