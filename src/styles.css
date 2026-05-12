@@ -247,3 +247,22 @@
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.ios-input {
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 0 0.75rem;
+  font-size: 13px;
+  color: white;
+  outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.ios-input::placeholder { color: rgba(255,255,255,0.35); }
+.ios-input:focus {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+}
+
