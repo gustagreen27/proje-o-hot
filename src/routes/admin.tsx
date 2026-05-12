@@ -85,7 +85,7 @@ function AdminPage() {
     window.dispatchEvent(new CustomEvent("hotmart:new", { detail: n }));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const n = buildCustom({
       type,
       value: `${currency} ${value}`,
@@ -95,6 +95,19 @@ function AdminPage() {
       receivedAt: Date.now() - minutesAgo * 60_000,
     });
     dispatch(n);
+    // dispara push real também
+    try {
+      const r = await sendPushFn({
+        data: { title: n.title, body: n.body, tag: n.id },
+      });
+      if (r.total === 0) {
+        toast.info("Adicionado ao app. Nenhum dispositivo inscrito para push real.");
+      } else {
+        toast.success(`Push real enviado para ${r.sent}/${r.total} dispositivo(s)`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha no push");
+    }
   };
 
   const handleRandom = () => dispatch(generateRandomNotification());
@@ -102,6 +115,50 @@ function AdminPage() {
   const handleClear = () => {
     localStorage.removeItem("hotmart-notify-history");
     window.dispatchEvent(new CustomEvent("hotmart:clear"));
+  };
+
+  const startSequence = async () => {
+    if (seqRunning) return;
+    seqAbort.current = false;
+    setSeqRunning(true);
+    setSeqProgress(0);
+    toast.success(`Iniciando ${seqCount} push reais a cada ${seqIntervalSec}s`);
+    for (let i = 0; i < seqCount; i++) {
+      if (seqAbort.current) break;
+      const val = seqRandomValue
+        ? (50 + Math.random() * 900).toFixed(2)
+        : value;
+      const id = randomHP();
+      const title = titleOverride || TITLES[type];
+      const body = bodyOverride || `Você recebeu: ${currency} ${val} - ${id}`;
+      try {
+        await sendPushFn({ data: { title, body, tag: `seq-${Date.now()}-${i}` } });
+        // também aparece no app visual
+        dispatch(
+          buildCustom({
+            type,
+            value: `${currency} ${val}`,
+            hp: id,
+            titleOverride: title,
+            bodyOverride: body,
+          }),
+        );
+      } catch (e) {
+        // continua
+      }
+      setSeqProgress(i + 1);
+      if (i < seqCount - 1) {
+        await new Promise((r) => setTimeout(r, seqIntervalSec * 1000));
+      }
+    }
+    setSeqRunning(false);
+    toast.success("Sequência finalizada");
+  };
+
+  const stopSequence = () => {
+    seqAbort.current = true;
+    setSeqRunning(false);
+    toast.message("Sequência interrompida");
   };
 
   return (
