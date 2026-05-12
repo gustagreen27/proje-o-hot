@@ -169,10 +169,8 @@ export async function sendSaleNotificationSequence(
       id,
       title: "Venda realizada com Cartão de Crédito",
       body: `Você recebeu: US$ ${amountStr} - ${generateTransactionId()}`,
-      // @ts-expect-error subtitle supported on iOS
       subtitle: platformName,
       sound: "default",
-      // @ts-expect-error badge supported on iOS
       badge: 1,
       schedule: { at: new Date(base + interval * 1000 * i + 1000), allowWhileIdle: true },
       extra: { platformName, amount: amountStr },
