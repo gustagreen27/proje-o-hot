@@ -87,20 +87,27 @@ function AdminPage() {
     window.dispatchEvent(new CustomEvent("hotmart:new", { detail: n }));
   };
 
+  const composeBody = (val: string, id: string) =>
+    bodyOverride ||
+    (buyerName
+      ? `${buyerName} comprou — ${currency} ${val} - ${id}`
+      : `Você recebeu: ${currency} ${val} - ${id}`);
+
   const handleSend = async () => {
+    const body = composeBody(value, hp);
+    const title = titleOverride || TITLES[type];
     const n = buildCustom({
       type,
       value: `${currency} ${value}`,
       hp,
-      titleOverride,
-      bodyOverride,
+      titleOverride: title,
+      bodyOverride: body,
       receivedAt: Date.now() - minutesAgo * 60_000,
     });
     dispatch(n);
-    // dispara push real também
     try {
       const r = await sendPushFn({
-        data: { title: n.title, body: n.body, tag: n.id },
+        data: { title, body, tag: n.id, icon: avatarUrl || undefined },
       });
       if (r.total === 0) {
         toast.info("Adicionado ao app. Nenhum dispositivo inscrito para push real.");
@@ -127,14 +134,14 @@ function AdminPage() {
     toast.success(`Iniciando ${seqCount} push reais a cada ${seqIntervalSec}s`);
     for (let i = 0; i < seqCount; i++) {
       if (seqAbort.current) break;
-      const val = seqRandomValue
-        ? (50 + Math.random() * 900).toFixed(2)
-        : value;
+      const val = seqRandomValue ? (50 + Math.random() * 900).toFixed(2) : value;
       const id = randomHP();
       const title = titleOverride || TITLES[type];
-      const body = bodyOverride || `Você recebeu: ${currency} ${val} - ${id}`;
+      const body = composeBody(val, id);
       try {
-        await sendPushFn({ data: { title, body, tag: `seq-${Date.now()}-${i}` } });
+        await sendPushFn({
+          data: { title, body, tag: `seq-${Date.now()}-${i}`, icon: avatarUrl || undefined },
+        });
         // também aparece no app visual
         dispatch(
           buildCustom({
