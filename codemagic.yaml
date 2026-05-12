@@ -184,6 +184,20 @@ workflows:
       - name: Build signed Ad Hoc .ipa
         script: |
           set -e
+          PLIST="capacitor-wrapper/ios/App/App/Info.plist"
+          # Tamper-check: ensure no step between the icon lock and the build mutated Info.plist.
+          if [ -f /tmp/info_plist.lock.md5 ]; then
+            EXPECTED=$(cat /tmp/info_plist.lock.md5)
+            CURRENT=$(md5 -q "$PLIST" 2>/dev/null || md5sum "$PLIST" | awk '{print $1}')
+            if [ "$EXPECTED" != "$CURRENT" ]; then
+              echo "❌ Info.plist was mutated AFTER the icon lock (expected=$EXPECTED, got=$CURRENT)"
+              plutil -p "$PLIST" | grep -i CFBundleIcon || true
+              exit 1
+            fi
+            FINAL=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" 2>/dev/null || echo "")
+            [ "$FINAL" = "AppIcon" ] || { echo "❌ CFBundleIconName drifted to '$FINAL'"; exit 1; }
+            echo "✅ Info.plist unchanged since icon lock (md5=$CURRENT)"
+          fi
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
