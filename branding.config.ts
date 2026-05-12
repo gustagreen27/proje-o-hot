@@ -21,6 +21,7 @@ export type BrandingConfig = {
   description: string;
   themeColor: string;
   backgroundColor: string;
+  logoUrl?: string;
   logo: string;
   splash: string;
 };
