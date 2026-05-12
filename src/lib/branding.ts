@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import defaultLogo from "@/assets/platform-logo.jpeg";
+import { BRANDING } from "../../branding.config";
 
 export type Branding = {
   platformName: string;
   platformLogo: string | null; // dataURL or asset url
 };
 
-const KEY = "gucmart:branding:v1";
+const KEY = "branding:v1";
 
 export const DEFAULT_BRANDING: Branding = {
-  platformName: "Gucmart",
+  platformName: BRANDING.appName,
   platformLogo: defaultLogo,
 };
 
-// Lazy-load Capacitor Preferences (available only in native build).
-// Falls back gracefully on web.
+// Lazy-load Capacitor Preferences ONLY on native; web stub throws on .then/.get.
 async function getPreferences(): Promise<typeof import("@capacitor/preferences").Preferences | null> {
+  if (!Capacitor.isNativePlatform()) return null;
   try {
     const mod = await import("@capacitor/preferences");
     return mod.Preferences;

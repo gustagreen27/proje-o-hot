@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications, type ScheduleOptions } from "@capacitor/local-notifications";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
 import { generateTransactionId, randomSaleAmount } from "./transactionId";
+import { BRANDING } from "../../branding.config";
 
 export const isNative = (): boolean => {
   try {
@@ -139,7 +140,7 @@ export async function sendSaleNotificationSequence(
 ): Promise<{ ok: boolean; scheduled: number; reason?: string }> {
   const count = Math.max(1, Math.floor(opts.count ?? 1));
   const interval = Math.max(0, opts.interval ?? 3);
-  const platformName = opts.platformName ?? "Gucmart";
+  const platformName = opts.platformName ?? BRANDING.notificationName;
   const amountStr =
     typeof opts.amount === "number" ? opts.amount.toFixed(2) : String(opts.amount);
 

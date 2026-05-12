@@ -10,6 +10,7 @@ import {
   stopSaleSequence,
 } from "@/lib/NotificationService";
 import { useBranding, type Branding } from "@/lib/branding";
+import { BRANDING } from "../../../branding.config";
 import { generateTransactionId } from "@/lib/transactionId";
 
 export function NotificationCenter() {
@@ -41,7 +42,7 @@ export function NotificationCenter() {
   const onSaveBranding = async () => {
     await hapticImpact("light");
     const next: Branding = {
-      platformName: draftName.trim() || "Gucmart",
+      platformName: draftName.trim() || BRANDING.appName,
       platformLogo: draftLogo,
     };
     setBranding(next);
@@ -259,7 +260,7 @@ export function NotificationCenter() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   className="ios-input"
-                  placeholder="Gucmart"
+                  placeholder={BRANDING.appName}
                   maxLength={32}
                 />
               </Field>
@@ -296,7 +297,7 @@ export function NotificationCenter() {
               </span>
               <div>
                 <p className="text-[14px] font-semibold text-white">
-                  {draftName || "Gucmart"}
+                  {draftName || BRANDING.appName}
                 </p>
                 <p className="text-[11px] text-white/60">
                   Você recebeu: US$ {saleValue || "0.00"} - {previewTx}
