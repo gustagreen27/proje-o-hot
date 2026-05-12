@@ -176,7 +176,13 @@ function AdminPage() {
         <Link to="/" className="rounded-full p-2 hover:bg-accent">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-lg font-semibold">Gerador de notificações</h1>
+        <h1 className="flex-1 text-lg font-semibold">Gerador de notificações</h1>
+        <Link
+          to="/setup"
+          className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent"
+        >
+          Como instalar
+        </Link>
       </header>
 
       <div className="mx-auto max-w-xl space-y-6 p-4">
