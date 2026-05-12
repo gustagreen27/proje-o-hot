@@ -1,16 +1,20 @@
 workflows:
-  ios-capacitor-wrapper-unsigned:
-    name: iOS Capacitor Wrapper (unsigned .ipa)
+  ios-capacitor-wrapper-adhoc:
+    name: iOS Capacitor Wrapper (Ad Hoc signed .ipa)
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
       xcode: latest
       cocoapods: default
       node: 20
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: app.plantain7502.soybean5714
       vars:
         XCODE_WORKSPACE: "capacitor-wrapper/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         XCODE_CONFIG: "Release"
+        BUNDLE_ID: "app.plantain7502.soybean5714"
 
     cache:
       cache_paths:
@@ -63,51 +67,29 @@ workflows:
         script: |
           pod install --repo-update
 
-      - name: Build iOS app WITHOUT code signing
+      - name: Set bundle id in Xcode project
         script: |
           set -e
-          mkdir -p build/ios/archive build/ios/ipa
+          # Garante que o bundle id do projeto Xcode bate com o do provisioning profile
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" \
+            capacitor-wrapper/ios/App/App/Info.plist || true
+          cd capacitor-wrapper/ios/App
+          xcode-project use-profiles
 
-          # Archive sem nenhum tipo de assinatura
-          xcodebuild \
-            -workspace "$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -configuration "$XCODE_CONFIG" \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -archivePath "build/ios/archive/App.xcarchive" \
-            archive \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGN_ENTITLEMENTS="" \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-
-      - name: Package unsigned .ipa (compatível com ESign)
+      - name: Build signed Ad Hoc .ipa
         script: |
           set -e
-          ARCHIVE="build/ios/archive/App.xcarchive"
-          APP_PATH="$ARCHIVE/Products/Applications/App.app"
-
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App.app não encontrado em $APP_PATH"
-            ls -la "$ARCHIVE/Products/Applications/" || true
-            exit 1
-          fi
-
-          # Empacota App.app -> Payload/ -> .ipa (formato padrão IPA unsigned)
-          rm -rf build/ios/ipa Payload
-          mkdir -p Payload build/ios/ipa
-          cp -R "$APP_PATH" Payload/
-          zip -qr "build/ios/ipa/App-unsigned.ipa" Payload
-          rm -rf Payload
-
-          echo "IPA gerado:"
-          ls -lh build/ios/ipa/
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --config "$XCODE_CONFIG" \
+            --archive-directory build/ios/archive
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
       - /tmp/xcodebuild_logs/*.log
 
     publishing:

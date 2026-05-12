@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "app.lovable.vendas.ioswrapper",
+  appId: "app.plantain7502.soybean5714",
   appName: "Vendas",
   webDir: "www",
 
