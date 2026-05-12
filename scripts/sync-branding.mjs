@@ -5,7 +5,7 @@
  *   - index.html          : <title>, apple-mobile-web-app-title, description meta
  *   - public/manifest.webmanifest : name, short_name, description, theme_color, background_color
  *   - capacitor-wrapper/capacitor.config.ts : appName
- *   - capacitor-wrapper/ios-resources/icon.png   <- branding/logo.png
+ *   - capacitor-wrapper/ios-resources/icon.png + icon-only.png + ios/icon.png <- branding/logo.png
  *   - capacitor-wrapper/ios-resources/splash.png <- branding/splash.png
  *   - public/icon-{180,192,512}.png + favicon.ico (regenerated from logo)
  *   - src/assets/platform-logo.jpeg (in-app dashboard avatar)
@@ -86,7 +86,12 @@ const escapeHtml = (s) =>
 {
   const iosDir = resolve(root, "capacitor-wrapper/ios-resources");
   mkdirSync(iosDir, { recursive: true });
+  mkdirSync(resolve(iosDir, "ios"), { recursive: true });
   copyFileSync(logoSrc, resolve(iosDir, "icon.png"));
+  // @capacitor/assets treats icon-only.png / ios/icon.png as the final AppIcon source.
+  // Keeping both prevents the generated iOS icon from falling back to any template/default asset.
+  copyFileSync(logoSrc, resolve(iosDir, "icon-only.png"));
+  copyFileSync(logoSrc, resolve(iosDir, "ios/icon.png"));
   copyFileSync(splashSrc, resolve(iosDir, "splash.png"));
   // dark variant for capacitor-assets (same image, ok for now)
   copyFileSync(splashSrc, resolve(iosDir, "splash-dark.png"));

@@ -82,16 +82,18 @@ workflows:
         script: |
           set -e
           test -f ios-resources/icon.png  || { echo "Missing ios-resources/icon.png";  exit 1; }
+          test -f ios-resources/icon-only.png  || { echo "Missing ios-resources/icon-only.png";  exit 1; }
+          test -f ios-resources/ios/icon.png  || { echo "Missing ios-resources/ios/icon.png";  exit 1; }
           test -f ios-resources/splash.png || { echo "Missing ios-resources/splash.png"; exit 1; }
-          # @capacitor/assets is in devDependencies; ensure binary exists
-          npx --yes @capacitor/assets generate --ios \
+          npx capacitor-assets generate --ios \
             --assetPath ios-resources \
             --iconBackgroundColor "#000000" \
             --splashBackgroundColor "#000000"
-          # Verify the AppIcon set was actually written
-          ls -la ios/App/App/Assets.xcassets/AppIcon.appiconset/ | head -30
-          test -f ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png \
-            || { echo "AppIcon generation failed"; exit 1; }
+          ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          APP_ICON="$ICON_SET/AppIcon-512@2x.png"
+          ls -la "$ICON_SET" | head -30
+          test -f "$APP_ICON" || { echo "AppIcon generation failed"; exit 1; }
+          node ../scripts/verify-ios-app-icon.mjs ios-resources/icon-only.png "$APP_ICON"
 
       - name: Re-sync iOS after asset generation
         working_directory: capacitor-wrapper
