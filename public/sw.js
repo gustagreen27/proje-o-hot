@@ -14,7 +14,7 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: "Hotmart", body: event.data ? event.data.text() : "" };
+    data = { title: "Venda realizada", body: event.data ? event.data.text() : "" };
   }
 
   const title = data.title || "Venda realizada";
