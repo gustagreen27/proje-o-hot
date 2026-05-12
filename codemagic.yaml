@@ -43,6 +43,13 @@ workflows:
         script: |
           npm ci || npm install
 
+      - name: Install Pillow (Python imaging — required for favicon/icon-192/icon-512 regen)
+        script: |
+          python3 -m pip install --user --upgrade Pillow \
+            || pip3 install --user --upgrade Pillow \
+            || sudo pip3 install Pillow
+          python3 -c "from PIL import Image; print('Pillow', Image.__version__, 'OK')"
+
       - name: Sync branding (writes index.html, manifest, capacitor.config.ts, ios-resources/, web icons)
         script: |
           npm run branding:sync
