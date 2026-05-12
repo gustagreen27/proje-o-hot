@@ -10,6 +10,7 @@ import {
   stopSaleSequence,
 } from "@/lib/NotificationService";
 import { useBranding, type Branding } from "@/lib/branding";
+import { BRANDING } from "../../../branding.config";
 import { generateTransactionId } from "@/lib/transactionId";
 
 export function NotificationCenter() {
