@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Sparkles, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, Play, Send, Sparkles, Square, Trash2, X, Zap } from "lucide-react";
+import { toast } from "sonner";
 import {
   TITLES,
   buildCustom,
@@ -10,6 +12,7 @@ import {
   type IOSNotification,
   type NotificationType,
 } from "@/lib/notifications";
+import { sendPush } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -29,6 +32,10 @@ const TYPES: { value: NotificationType; label: string }[] = [
   { value: "refund", label: "Reembolso" },
 ];
 
+function randomHP() {
+  return `HP${Math.floor(1_000_000_000 + Math.random() * 9_000_000_000)}`;
+}
+
 function AdminPage() {
   const [type, setType] = useState<NotificationType>("credit-card");
   const [value, setValue] = useState("360.24");
@@ -39,6 +46,16 @@ function AdminPage() {
   const [minutesAgo, setMinutesAgo] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [history, setHistory] = useState<IOSNotification[]>([]);
+
+  // Sequência de push real
+  const [seqCount, setSeqCount] = useState(10);
+  const [seqIntervalSec, setSeqIntervalSec] = useState(5);
+  const [seqRandomValue, setSeqRandomValue] = useState(true);
+  const [seqRunning, setSeqRunning] = useState(false);
+  const [seqProgress, setSeqProgress] = useState(0);
+  const seqAbort = useRef(false);
+
+  const sendPushFn = useServerFn(sendPush);
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -68,7 +85,7 @@ function AdminPage() {
     window.dispatchEvent(new CustomEvent("hotmart:new", { detail: n }));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const n = buildCustom({
       type,
       value: `${currency} ${value}`,
@@ -78,6 +95,19 @@ function AdminPage() {
       receivedAt: Date.now() - minutesAgo * 60_000,
     });
     dispatch(n);
+    // dispara push real também
+    try {
+      const r = await sendPushFn({
+        data: { title: n.title, body: n.body, tag: n.id },
+      });
+      if (r.total === 0) {
+        toast.info("Adicionado ao app. Nenhum dispositivo inscrito para push real.");
+      } else {
+        toast.success(`Push real enviado para ${r.sent}/${r.total} dispositivo(s)`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha no push");
+    }
   };
 
   const handleRandom = () => dispatch(generateRandomNotification());
@@ -85,6 +115,50 @@ function AdminPage() {
   const handleClear = () => {
     localStorage.removeItem("hotmart-notify-history");
     window.dispatchEvent(new CustomEvent("hotmart:clear"));
+  };
+
+  const startSequence = async () => {
+    if (seqRunning) return;
+    seqAbort.current = false;
+    setSeqRunning(true);
+    setSeqProgress(0);
+    toast.success(`Iniciando ${seqCount} push reais a cada ${seqIntervalSec}s`);
+    for (let i = 0; i < seqCount; i++) {
+      if (seqAbort.current) break;
+      const val = seqRandomValue
+        ? (50 + Math.random() * 900).toFixed(2)
+        : value;
+      const id = randomHP();
+      const title = titleOverride || TITLES[type];
+      const body = bodyOverride || `Você recebeu: ${currency} ${val} - ${id}`;
+      try {
+        await sendPushFn({ data: { title, body, tag: `seq-${Date.now()}-${i}` } });
+        // também aparece no app visual
+        dispatch(
+          buildCustom({
+            type,
+            value: `${currency} ${val}`,
+            hp: id,
+            titleOverride: title,
+            bodyOverride: body,
+          }),
+        );
+      } catch (e) {
+        // continua
+      }
+      setSeqProgress(i + 1);
+      if (i < seqCount - 1) {
+        await new Promise((r) => setTimeout(r, seqIntervalSec * 1000));
+      }
+    }
+    setSeqRunning(false);
+    toast.success("Sequência finalizada");
+  };
+
+  const stopSequence = () => {
+    seqAbort.current = true;
+    setSeqRunning(false);
+    toast.message("Sequência interrompida");
   };
 
   return (
@@ -97,6 +171,86 @@ function AdminPage() {
       </header>
 
       <div className="mx-auto max-w-xl space-y-6 p-4">
+        {/* Sequência de Push REAL */}
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Sequência de Push real
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Quantidade</label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={seqCount}
+                onChange={(e) => setSeqCount(Math.max(1, Number(e.target.value)))}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Intervalo (segundos)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={3600}
+                value={seqIntervalSec}
+                onChange={(e) => setSeqIntervalSec(Math.max(1, Number(e.target.value)))}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={seqRandomValue}
+              onChange={(e) => setSeqRandomValue(e.target.checked)}
+            />
+            Variar valor/HP a cada notificação
+          </label>
+
+          {seqRunning && (
+            <div className="mt-3">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${(seqProgress / seqCount) * 100}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {seqProgress}/{seqCount} enviadas
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4 flex gap-2">
+            {!seqRunning ? (
+              <button
+                onClick={startSequence}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                <Play className="h-4 w-4 fill-current" /> Play
+              </button>
+            ) : (
+              <button
+                onClick={stopSequence}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground hover:opacity-90"
+              >
+                <Square className="h-4 w-4 fill-current" /> Stop
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Usa os valores configurados abaixo (tipo, moeda, valor, ID HP, título, descrição).
+            Mantenha esta aba aberta para a sequência rodar.
+          </p>
+        </section>
+
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <label className="mb-2 block text-sm font-medium">Tipo de pagamento</label>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
