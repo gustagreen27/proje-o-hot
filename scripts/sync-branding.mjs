@@ -98,7 +98,7 @@ async function writeIosAppIconSet() {
     { idiom: "ipad", size: "76x76", scale: "1x", filename: "AppIcon-iPad-76@1x.png", px: 76 },
     { idiom: "ipad", size: "76x76", scale: "2x", filename: "AppIcon-iPad-76@2x.png", px: 152 },
     { idiom: "ipad", size: "83.5x83.5", scale: "2x", filename: "AppIcon-iPad-83.5@2x.png", px: 167 },
-    { idiom: "ios-marketing", size: "1024x1024", scale: "1x", filename: "AppIcon-1024.png", px: 1024 },
+    { idiom: "ios-marketing", size: "1024x1024", scale: "1x", filename: "AppIcon-512@2x.png", px: 1024 },
   ];
   for (const entry of entries) await writePng(entry.px, resolve(iconSet, entry.filename));
   writeFileSync(resolve(iconSet, "Contents.json"), JSON.stringify({ images: entries.map(({ px, ...entry }) => entry), info: { author: "xcode", version: 1 } }, null, 2) + "\n");
