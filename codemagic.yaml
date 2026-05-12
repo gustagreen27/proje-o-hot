@@ -105,11 +105,25 @@ workflows:
             "$ICON_SET" \
             ../public
 
-      - name: Re-sync iOS after asset generation
+      - name: Snapshot AppIcon and patch Info.plist (NO cap sync after this point)
         working_directory: capacitor-wrapper
         script: |
           set -e
-          npx cap sync ios
+          # CRITICAL: do NOT run `npx cap sync ios` here. cap sync rewrites
+          # ios/App/App/Assets.xcassets and would restore the template AppIcon,
+          # silently overwriting the freshly generated brand icon.
+          ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          NOTIF_SET="ios/App/App/Assets.xcassets/NotificationIcon.imageset"
+          test -d "$ICON_SET" || { echo "❌ AppIcon.appiconset missing before snapshot"; exit 1; }
+          # Snapshot the freshly-generated icon set so we can restore it if any
+          # later step (pods, profiles, xcode build prep) touches xcassets.
+          SNAP_DIR="/tmp/appicon-snapshot"
+          rm -rf "$SNAP_DIR"
+          mkdir -p "$SNAP_DIR"
+          cp -R "$ICON_SET" "$SNAP_DIR/AppIcon.appiconset"
+          [ -d "$NOTIF_SET" ] && cp -R "$NOTIF_SET" "$SNAP_DIR/NotificationIcon.imageset" || true
+          echo "📸 Snapshotted AppIcon.appiconset to $SNAP_DIR"
+          shasum -a 256 "$ICON_SET"/*.png | tee /tmp/appicon-snapshot.sha256
           node ../scripts/sync-branding.mjs
           PLIST="ios/App/App/Info.plist"
           # Modern asset-catalog flow: only CFBundleIconName is required.
