@@ -18,6 +18,7 @@ import {
   type Transaction,
 } from "@/components/dashboard/TransactionItem";
 import { BottomTabBar, type TabId } from "@/components/dashboard/BottomTabBar";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 
 import {
   hapticImpact,
