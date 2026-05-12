@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import iconUrl from "@/../public/icon-512.png";
+const iconUrl = "/icon-512.png";
 import { formatRelative, type IOSNotification } from "@/lib/notifications";
 import { useEffect, useState } from "react";
 
