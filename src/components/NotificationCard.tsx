@@ -43,7 +43,7 @@ export function NotificationCard({ notification, stackIndex, total, expanded, on
       <div className="flex items-start gap-2.5 px-3 py-2.5">
         <img
           src={iconUrl}
-          alt="Hotmart"
+          alt=""
           width={38}
           height={38}
           className="h-[38px] w-[38px] flex-shrink-0 rounded-[9px] shadow-sm"
