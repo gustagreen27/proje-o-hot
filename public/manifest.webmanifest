@@ -1,6 +1,6 @@
 {
-  "name": "Venda Realizada",
-  "short_name": "Vendas",
+  "name": ".",
+  "short_name": ".",
   "description": "Notificações de vendas em tempo real",
   "start_url": "/",
   "display": "standalone",
