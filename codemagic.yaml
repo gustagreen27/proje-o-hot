@@ -145,6 +145,13 @@ workflows:
             capacitor-wrapper/ios/App/App/Info.plist || true
           /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" \
             capacitor-wrapper/ios/App/App/Info.plist || true
+          # Auto-bump CFBundleVersion (timestamp) so each IPA is unmistakably new on-device.
+          BUILD_NUMBER="${BUILD_NUMBER:-$(date +%Y%m%d%H%M)}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" \
+            capacitor-wrapper/ios/App/App/Info.plist \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $BUILD_NUMBER" \
+            capacitor-wrapper/ios/App/App/Info.plist
+          echo "📦 CFBundleVersion=$BUILD_NUMBER"
           cd capacitor-wrapper/ios/App
           xcode-project use-profiles
 
