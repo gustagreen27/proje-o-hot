@@ -176,6 +176,9 @@ function LockScreen() {
             >
               Som
             </button>
+            <Link to="/setup" className="rounded-full px-3 py-1 text-white/80">
+              Instalar
+            </Link>
             <Link to="/admin" className="flex items-center gap-1 rounded-full px-3 py-1 text-white/80">
               <Settings2 className="h-3.5 w-3.5" /> Admin
             </Link>
