@@ -4,6 +4,7 @@
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications, type ScheduleOptions } from "@capacitor/local-notifications";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
+import { generateTransactionId, randomSaleAmount } from "./transactionId";
 
 export const isNative = (): boolean => {
   try {
@@ -102,4 +103,45 @@ export async function initNotifications(): Promise<void> {
   if (!isNative()) return;
   await registerListeners();
   await requestPermissions();
+}
+
+/**
+ * Sends the canonical "Venda realizada com Cartão de Crédito" notification
+ * with a fresh dynamic HP transaction ID. Triggers haptic feedback and
+ * schedules a real native iOS local notification (lockscreen, banner,
+ * Notification Center, Dynamic Island, background).
+ */
+export async function sendSaleNotification(opts?: {
+  amount?: string;
+  delayMs?: number;
+}): Promise<{ ok: boolean; transactionId: string; amount: string; reason?: string }> {
+  const transactionId = generateTransactionId();
+  const amount = opts?.amount ?? randomSaleAmount();
+
+  await hapticImpact("medium");
+
+  if (!isNative()) {
+    return { ok: false, transactionId, amount, reason: "not-native" };
+  }
+
+  const granted = await requestPermissions();
+  if (!granted) return { ok: false, transactionId, amount, reason: "denied" };
+
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        title: "Venda realizada com Cartão de Crédito",
+        body: `Você recebeu: ${amount} - ${transactionId}`,
+        id: Math.floor(Date.now() % 2_147_483_647),
+        sound: "default",
+        // @ts-expect-error iOS badge supported
+        badge: 1,
+        schedule: { at: new Date(Date.now() + (opts?.delayMs ?? 3000)), allowWhileIdle: true },
+        extra: { transactionId, amount },
+      },
+    ],
+  });
+
+  await hapticSuccess();
+  return { ok: true, transactionId, amount };
 }
