@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
+import defaultLogo from "@/assets/platform-logo.jpeg";
 
 export type Branding = {
   platformName: string;
-  platformLogo: string | null; // dataURL
+  platformLogo: string | null; // dataURL or asset url
 };
 
 const KEY = "gucmart:branding:v1";
 
 export const DEFAULT_BRANDING: Branding = {
   platformName: "Gucmart",
-  platformLogo: null,
+  platformLogo: defaultLogo,
 };
 
 export function loadBranding(): Branding {
