@@ -44,9 +44,9 @@ export const sendPush = createServerFn({ method: "POST" })
         console.error("[push] web push failed", e);
         return { sent: 0, total: 0 };
       }),
-      sendApnsToAll({ title: data.title, body: data.body }).catch((e) => {
+      sendApnsToAll({ title: data.title, body: data.body }).catch((e: unknown) => {
         console.error("[push] APNs failed", e);
-        return { sent: 0, total: 0, errors: [String(e?.message ?? e)] };
+        return { sent: 0, total: 0, errors: [String(e)] };
       }),
     ]);
     return {
