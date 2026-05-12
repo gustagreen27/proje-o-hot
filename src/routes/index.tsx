@@ -153,6 +153,25 @@ function LockScreen() {
     }
   };
 
+  const sendLocal = async () => {
+    await hapticImpact("medium");
+    if (!isNative()) {
+      toast.error("Notificação local nativa só funciona no app iOS instalado.");
+      return;
+    }
+    const ok = await sendLocalNotification({
+      title: "Nova transação",
+      body: "Você recebeu um novo pagamento.",
+      delayMs: 3000,
+    });
+    if (ok) {
+      await hapticSuccess();
+      toast.success("Notificação agendada (3s) — bloqueie a tela para ver.");
+    } else {
+      toast.error("Permissão de notificação negada.");
+    }
+  };
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="lock-wallpaper" style={{ backgroundImage: `url(${wallpaperUrl})` }} />
