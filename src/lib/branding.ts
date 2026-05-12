@@ -15,12 +15,15 @@ export const DEFAULT_BRANDING: Branding = {
   platformLogo: defaultLogo,
 };
 
-// Lazy-load Capacitor Preferences ONLY on native; web stub throws on .then/.get.
-async function getPreferences(): Promise<typeof import("@capacitor/preferences").Preferences | null> {
+// Lazy-load Capacitor Preferences ONLY on native.
+// Do not return the plugin proxy directly from an async function: Promise resolution
+// probes `.then`, which Capacitor treats as a plugin method on web.
+type PreferencesPlugin = typeof import("@capacitor/preferences").Preferences;
+async function getPreferences(): Promise<{ plugin: PreferencesPlugin } | null> {
   if (!Capacitor.isNativePlatform()) return null;
   try {
     const mod = await import("@capacitor/preferences");
-    return mod.Preferences;
+    return { plugin: mod.Preferences };
   } catch {
     return null;
   }
@@ -53,10 +56,10 @@ export function loadBranding(): Branding {
 
 async function loadBrandingAsync(): Promise<Branding> {
   // Try native Preferences first (survives reinstall on iOS via app sandbox), then localStorage.
-  const Preferences = await getPreferences();
-  if (Preferences) {
+  const nativePreferences = await getPreferences();
+  if (nativePreferences) {
     try {
-      const { value } = await Preferences.get({ key: KEY });
+      const { value } = await nativePreferences.plugin.get({ key: KEY });
       if (value) {
         const parsed = JSON.parse(value) as Partial<Branding>;
         const merged = { ...DEFAULT_BRANDING, ...parsed };
@@ -74,10 +77,10 @@ export function saveBranding(b: Branding) {
   writeLocal(b);
   // Best-effort native persistence
   void (async () => {
-    const Preferences = await getPreferences();
-    if (!Preferences) return;
+    const nativePreferences = await getPreferences();
+    if (!nativePreferences) return;
     try {
-      await Preferences.set({ key: KEY, value: JSON.stringify(b) });
+      await nativePreferences.plugin.set({ key: KEY, value: JSON.stringify(b) });
     } catch {
       /* ignore */
     }
