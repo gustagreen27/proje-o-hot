@@ -79,14 +79,25 @@ async function writeIosAppIconSet() {
   rmSync(iconSet, { recursive: true, force: true });
   mkdirSync(iconSet, { recursive: true });
   const entries = [
+    { idiom: "iphone", size: "20x20", scale: "1x", filename: "AppIcon-20@1x.png", px: 20 },
     { idiom: "iphone", size: "20x20", scale: "2x", filename: "AppIcon-20@2x.png", px: 40 },
     { idiom: "iphone", size: "20x20", scale: "3x", filename: "AppIcon-20@3x.png", px: 60 },
+    { idiom: "iphone", size: "29x29", scale: "1x", filename: "AppIcon-29@1x.png", px: 29 },
     { idiom: "iphone", size: "29x29", scale: "2x", filename: "AppIcon-29@2x.png", px: 58 },
     { idiom: "iphone", size: "29x29", scale: "3x", filename: "AppIcon-29@3x.png", px: 87 },
     { idiom: "iphone", size: "40x40", scale: "2x", filename: "AppIcon-40@2x.png", px: 80 },
     { idiom: "iphone", size: "40x40", scale: "3x", filename: "AppIcon-40@3x.png", px: 120 },
     { idiom: "iphone", size: "60x60", scale: "2x", filename: "AppIcon-60@2x.png", px: 120 },
     { idiom: "iphone", size: "60x60", scale: "3x", filename: "AppIcon-60@3x.png", px: 180 },
+    { idiom: "ipad", size: "20x20", scale: "1x", filename: "AppIcon-iPad-20@1x.png", px: 20 },
+    { idiom: "ipad", size: "20x20", scale: "2x", filename: "AppIcon-iPad-20@2x.png", px: 40 },
+    { idiom: "ipad", size: "29x29", scale: "1x", filename: "AppIcon-iPad-29@1x.png", px: 29 },
+    { idiom: "ipad", size: "29x29", scale: "2x", filename: "AppIcon-iPad-29@2x.png", px: 58 },
+    { idiom: "ipad", size: "40x40", scale: "1x", filename: "AppIcon-iPad-40@1x.png", px: 40 },
+    { idiom: "ipad", size: "40x40", scale: "2x", filename: "AppIcon-iPad-40@2x.png", px: 80 },
+    { idiom: "ipad", size: "76x76", scale: "1x", filename: "AppIcon-iPad-76@1x.png", px: 76 },
+    { idiom: "ipad", size: "76x76", scale: "2x", filename: "AppIcon-iPad-76@2x.png", px: 152 },
+    { idiom: "ipad", size: "83.5x83.5", scale: "2x", filename: "AppIcon-iPad-83.5@2x.png", px: 167 },
     { idiom: "ios-marketing", size: "1024x1024", scale: "1x", filename: "AppIcon-1024.png", px: 1024 },
   ];
   for (const entry of entries) await writePng(entry.px, resolve(iconSet, entry.filename));
