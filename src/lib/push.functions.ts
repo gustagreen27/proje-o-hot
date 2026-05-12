@@ -38,5 +38,34 @@ export const sendPush = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => sendSchema.parse(input))
   .handler(async ({ data }) => {
     const { sendToAll } = await import("./push.server");
-    return sendToAll(data);
+    const { sendApnsToAll } = await import("./native-push.server");
+    const [web, native] = await Promise.all([
+      sendToAll(data).catch((e) => {
+        console.error("[push] web push failed", e);
+        return { sent: 0, total: 0 };
+      }),
+      sendApnsToAll({ title: data.title, body: data.body }).catch((e) => {
+        console.error("[push] APNs failed", e);
+        return { sent: 0, total: 0, errors: [String(e?.message ?? e)] };
+      }),
+    ]);
+    return {
+      sent: web.sent + native.sent,
+      total: web.total + native.total,
+      web,
+      native,
+    };
+  });
+
+const deviceTokenSchema = z.object({
+  token: z.string().min(40).max(200),
+  platform: z.enum(["ios", "android"]).default("ios"),
+  bundleId: z.string().max(200).optional(),
+});
+
+export const registerDeviceToken = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => deviceTokenSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { registerToken } = await import("./native-push.server");
+    return registerToken(data);
   });
