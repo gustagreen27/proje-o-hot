@@ -148,13 +148,15 @@ workflows:
           cd capacitor-wrapper/ios/App
           xcode-project use-profiles
 
-      - name: 🔒 Final icon lock (must be the LAST step before build)
+      - name: 🔒 Final icon lock (LAST step before build — bulletproof)
         script: |
           set -e
           PLIST="capacitor-wrapper/ios/App/App/Info.plist"
+
           echo "===== INFO.PLIST BEFORE LOCK ====="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" || true
-          grep -n "CFBundleIcon" "$PLIST" || true
+          HASH_BEFORE=$(md5 -q "$PLIST" 2>/dev/null || md5sum "$PLIST" | awk '{print $1}')
+          echo "md5(before)=$HASH_BEFORE"
+          plutil -p "$PLIST" | grep -i CFBundleIcon || true
 
           echo "🔒 Locking CFBundleIconName = AppIcon ..."
           /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$PLIST" 2>/dev/null \
@@ -162,16 +164,22 @@ workflows:
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFiles" "$PLIST" 2>/dev/null || true
 
+          plutil -lint "$PLIST"
+
           echo "===== INFO.PLIST AFTER LOCK ====="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST"
-          grep -n "CFBundleIcon" "$PLIST" || true
+          HASH_AFTER=$(md5 -q "$PLIST" 2>/dev/null || md5sum "$PLIST" | awk '{print $1}')
+          echo "md5(after)=$HASH_AFTER"
+          plutil -p "$PLIST" | grep -i CFBundleIcon || true
 
           FINAL=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST" 2>/dev/null || echo "")
           if [ "$FINAL" != "AppIcon" ]; then
             echo "❌ CFBundleIconName WAS OVERWRITTEN (got: '$FINAL')"
             exit 1
           fi
-          echo "✅ Icon lock confirmed: CFBundleIconName=AppIcon"
+
+          # Snapshot hash so the build step can detect any later mutation.
+          echo "$HASH_AFTER" > /tmp/info_plist.lock.md5
+          echo "✅ ICON LOCK OK — CFBundleIconName=AppIcon (md5=$HASH_AFTER)"
 
       - name: Build signed Ad Hoc .ipa
         script: |
