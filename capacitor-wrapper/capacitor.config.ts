@@ -38,9 +38,6 @@ const config: CapacitorConfig = {
       backgroundColor: "#000000",
       overlaysWebView: true,        // status bar fica POR CIMA da webview
     },
-    PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"],
-    },
     LocalNotifications: {
       smallIcon: "ic_stat_icon",
       iconColor: "#000000",
