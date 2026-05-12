@@ -287,6 +287,21 @@ function AdminPage() {
 
           <Field label="ID HP" value={hp} onChange={setHp} className="mt-3" />
 
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Field
+              label="Nome do comprador"
+              value={buyerName}
+              onChange={setBuyerName}
+              placeholder="ex.: João S."
+            />
+            <Field
+              label="Avatar (URL do ícone)"
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              placeholder="https://..."
+            />
+          </div>
+
           <Field
             label="Título (opcional — sobrescreve)"
             value={titleOverride}
