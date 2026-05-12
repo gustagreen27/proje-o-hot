@@ -6,7 +6,7 @@
   "scripts": {
     "cap:add:ios": "cap add ios",
     "cap:copy-web": "node ./scripts/copy-web.mjs",
-    "cap:assets": "capacitor-assets generate --ios --assetPath ios-resources --iconBackgroundColor #000000 --splashBackgroundColor #000000",
+    "cap:assets": "capacitor-assets generate --ios --assetPath ios-resources --iconBackgroundColor \"#000000\" --splashBackgroundColor \"#000000\"",
     "cap:sync": "npm run cap:copy-web && cap sync ios && npm run cap:assets",
     "cap:open:ios": "cap open ios",
     "ios:build": "npm run cap:sync && cap open ios"
