@@ -43,19 +43,21 @@ workflows:
         script: |
           npm ci || npm install
 
-      - name: Build web (Vite client bundle)
+      - name: Build web SPA for Capacitor
         script: |
           npm run build
+          test -f dist/index.html
 
       - name: Install Capacitor wrapper dependencies
         working_directory: capacitor-wrapper
         script: |
           npm install
 
-      - name: Copy web build into Capacitor (dist/)
+      - name: Copy SPA build into Capacitor (dist/)
         working_directory: capacitor-wrapper
         script: |
           npm run cap:copy-web
+          test -f dist/index.html
 
       - name: Add iOS platform (if missing)
         working_directory: capacitor-wrapper
