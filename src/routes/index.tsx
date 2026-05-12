@@ -18,6 +18,7 @@ import {
   type Transaction,
 } from "@/components/dashboard/TransactionItem";
 import { BottomTabBar, type TabId } from "@/components/dashboard/BottomTabBar";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 
 import {
   hapticImpact,
@@ -192,6 +193,8 @@ function Dashboard() {
             : txs.map((tx, i) => <TransactionItem key={tx.id} tx={tx} index={i} />)}
         </div>
       </section>
+
+      <NotificationCenter />
 
       <BottomTabBar active={tab} onChange={setTab} />
     </main>

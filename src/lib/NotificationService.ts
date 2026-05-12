@@ -105,6 +105,96 @@ export async function initNotifications(): Promise<void> {
   await requestPermissions();
 }
 
+// ---- Sequence controller -------------------------------------------------
+
+let activeTimers: ReturnType<typeof setTimeout>[] = [];
+let activeIds: number[] = [];
+
+export function stopSaleSequence(): void {
+  activeTimers.forEach((t) => clearTimeout(t));
+  activeTimers = [];
+  if (isNative() && activeIds.length) {
+    LocalNotifications.cancel({
+      notifications: activeIds.map((id) => ({ id })),
+    }).catch(() => undefined);
+  }
+  activeIds = [];
+}
+
+export type SequenceOptions = {
+  amount: string | number;
+  count?: number;
+  interval?: number; // seconds
+  platformName?: string;
+  onProgress?: (sent: number, total: number) => void;
+  onDone?: () => void;
+};
+
+/**
+ * Schedules `count` native iOS local notifications, each with a unique HP id,
+ * spaced by `interval` seconds. Cancellable via stopSaleSequence().
+ */
+export async function sendSaleNotificationSequence(
+  opts: SequenceOptions,
+): Promise<{ ok: boolean; scheduled: number; reason?: string }> {
+  const count = Math.max(1, Math.floor(opts.count ?? 1));
+  const interval = Math.max(0, opts.interval ?? 3);
+  const platformName = opts.platformName ?? "Gucmart";
+  const amountStr =
+    typeof opts.amount === "number" ? opts.amount.toFixed(2) : String(opts.amount);
+
+  await hapticImpact("medium");
+  stopSaleSequence();
+
+  if (!isNative()) {
+    // Simulate progress for web preview
+    for (let i = 0; i < count; i++) {
+      const t = setTimeout(() => {
+        opts.onProgress?.(i + 1, count);
+        if (i === count - 1) opts.onDone?.();
+      }, interval * 1000 * i + 50);
+      activeTimers.push(t);
+    }
+    return { ok: false, scheduled: 0, reason: "not-native" };
+  }
+
+  const granted = await requestPermissions();
+  if (!granted) return { ok: false, scheduled: 0, reason: "denied" };
+
+  const base = Date.now();
+  const notifications = Array.from({ length: count }, (_, i) => {
+    const id = Math.floor((base + i) % 2_147_483_647);
+    activeIds.push(id);
+    return {
+      id,
+      title: "Venda realizada com Cartão de Crédito",
+      body: `Você recebeu: US$ ${amountStr} - ${generateTransactionId()}`,
+      subtitle: platformName,
+      sound: "default",
+      badge: 1,
+      schedule: { at: new Date(base + interval * 1000 * i + 1000), allowWhileIdle: true },
+      extra: { platformName, amount: amountStr },
+    };
+  });
+
+  await LocalNotifications.schedule({ notifications });
+
+  // Progress reporting (UI feedback) — independent timers from native schedule
+  for (let i = 0; i < count; i++) {
+    const t = setTimeout(
+      () => {
+        opts.onProgress?.(i + 1, count);
+        hapticSuccess().catch(() => undefined);
+        if (i === count - 1) opts.onDone?.();
+      },
+      interval * 1000 * i + 1000,
+    );
+    activeTimers.push(t);
+  }
+
+  return { ok: true, scheduled: count };
+}
+
 /**
  * Sends the canonical "Venda realizada com Cartão de Crédito" notification
  * with a fresh dynamic HP transaction ID. Triggers haptic feedback and
