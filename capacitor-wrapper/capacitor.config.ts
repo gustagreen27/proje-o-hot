@@ -1,26 +1,18 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+// Build local nativo do Capacitor — sem WebView remota, sem Lovable hosted.
+// O conteúdo da WebView vem de `webDir` (assets locais embutidos no .ipa).
 const config: CapacitorConfig = {
   appId: "app.plantain7502.soybean5714",
-  appName: "Vendas",
-  webDir: "www",
-
-  // Carrega o site Lovable diretamente — mantém 100% da UI web atual
-  server: {
-    url: "https://ios-push-aura.lovable.app",
-    cleartext: false,
-    androidScheme: "https",
-    iosScheme: "https",
-  },
+  appName: "Gucmart",
+  webDir: "dist",
 
   ios: {
-    contentInset: "never",          // sem inset extra → fullscreen real
+    contentInset: "never",
     scrollEnabled: true,
-    limitsNavigationsToAppBoundDomains: false,
     backgroundColor: "#000000",
     preferredContentMode: "mobile",
-    // Status bar overlay transparente — o site já desenha o relógio
-    overrideUserAgent: undefined,
+    limitsNavigationsToAppBoundDomains: false,
   },
 
   plugins: {
@@ -34,9 +26,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      style: "DARK",                // texto claro sobre fundo preto
+      style: "DARK",
       backgroundColor: "#000000",
-      overlaysWebView: true,        // status bar fica POR CIMA da webview
+      overlaysWebView: true,
     },
     LocalNotifications: {
       smallIcon: "ic_stat_icon",
