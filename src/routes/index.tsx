@@ -72,6 +72,8 @@ function LockScreen() {
           if (r.ok) setPushOn(true);
         })
         .catch((e) => console.error("[native-push] init failed", e));
+      // Init local notifications (permissions + listeners) for native shell.
+      initNotifications().catch((e) => console.error("[notify] init failed", e));
     }
     return () => clearInterval(i);
   }, [registerNativeFn]);
