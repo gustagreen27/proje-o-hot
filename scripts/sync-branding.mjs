@@ -79,10 +79,8 @@ async function writeIosAppIconSet() {
   rmSync(iconSet, { recursive: true, force: true });
   mkdirSync(iconSet, { recursive: true });
   const entries = [
-    { idiom: "iphone", size: "20x20", scale: "1x", filename: "AppIcon-20@1x.png", px: 20 },
     { idiom: "iphone", size: "20x20", scale: "2x", filename: "AppIcon-20@2x.png", px: 40 },
     { idiom: "iphone", size: "20x20", scale: "3x", filename: "AppIcon-20@3x.png", px: 60 },
-    { idiom: "iphone", size: "29x29", scale: "1x", filename: "AppIcon-29@1x.png", px: 29 },
     { idiom: "iphone", size: "29x29", scale: "2x", filename: "AppIcon-29@2x.png", px: 58 },
     { idiom: "iphone", size: "29x29", scale: "3x", filename: "AppIcon-29@3x.png", px: 87 },
     { idiom: "iphone", size: "40x40", scale: "2x", filename: "AppIcon-40@2x.png", px: 80 },
