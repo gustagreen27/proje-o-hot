@@ -1,6 +1,6 @@
 workflows:
-  ios-capacitor-wrapper:
-    name: iOS Capacitor Wrapper (.ipa)
+  ios-capacitor-wrapper-unsigned:
+    name: iOS Capacitor Wrapper (unsigned .ipa)
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -8,16 +8,9 @@ workflows:
       cocoapods: default
       node: 20
       vars:
-        # Bundle ID precisa bater com capacitor-wrapper/capacitor.config.ts
-        BUNDLE_ID: "app.lovable.vendas.ioswrapper"
         XCODE_WORKSPACE: "capacitor-wrapper/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-      # Para builds assinados, configure no Codemagic UI:
-      #   Teams → Code signing identities → iOS certificate (.p12) + Provisioning profile
-      # e ative o bloco abaixo (descomente):
-      # ios_signing:
-      #   distribution_type: ad_hoc        # ou app_store / development
-      #   bundle_identifier: $BUNDLE_ID
+        XCODE_CONFIG: "Release"
 
     cache:
       cache_paths:
@@ -35,14 +28,14 @@ workflows:
           source: true
 
     scripts:
-      - name: Node & tooling versions
+      - name: Tooling versions
         script: |
           node -v
           npm -v
           xcodebuild -version
           pod --version
 
-      - name: Install root dependencies (TanStack Start project)
+      - name: Install root dependencies
         script: |
           npm ci || npm install
 
@@ -70,24 +63,52 @@ workflows:
         script: |
           pod install --repo-update
 
-      - name: Set up code signing (automatic via Codemagic)
+      - name: Build iOS app WITHOUT code signing
         script: |
-          # Requer ios_signing configurado acima OU integração App Store Connect API.
-          # Sem isso, o archive abaixo cai em "unsigned" e o export .ipa falha.
-          xcode-project use-profiles || echo "Skipping: nenhum perfil configurado (build sairá sem assinatura)."
+          set -e
+          mkdir -p build/ios/archive build/ios/ipa
 
-      - name: Build & archive
+          # Archive sem nenhum tipo de assinatura
+          xcodebuild \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration "$XCODE_CONFIG" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "build/ios/archive/App.xcarchive" \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Package unsigned .ipa (compatível com ESign)
         script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --config Release
+          set -e
+          ARCHIVE="build/ios/archive/App.xcarchive"
+          APP_PATH="$ARCHIVE/Products/Applications/App.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "App.app não encontrado em $APP_PATH"
+            ls -la "$ARCHIVE/Products/Applications/" || true
+            exit 1
+          fi
+
+          # Empacota App.app -> Payload/ -> .ipa (formato padrão IPA unsigned)
+          rm -rf build/ios/ipa Payload
+          mkdir -p Payload build/ios/ipa
+          cp -R "$APP_PATH" Payload/
+          zip -qr "build/ios/ipa/App-unsigned.ipa" Payload
+          rm -rf Payload
+
+          echo "IPA gerado:"
+          ls -lh build/ios/ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM.zip
 
     publishing:
       email:
@@ -96,8 +117,3 @@ workflows:
         notify:
           success: true
           failure: true
-      # Para subir direto no TestFlight, configure App Store Connect API key
-      # em Codemagic → Teams → Integrations e descomente:
-      # app_store_connect:
-      #   auth: integration
-      #   submit_to_testflight: true
