@@ -1,56 +1,56 @@
-# Vendas iOS Wrapper (Capacitor)
+# Gucmart — iOS nativo (Capacitor)
 
-Shell nativo iOS que carrega `https://ios-push-aura.lovable.app` numa WKWebView,
-com suporte a:
+App iOS nativo gerado com Capacitor. **Sem WebView remota, sem APNs, sem Firebase, sem OneSignal.** Tudo roda offline com assets locais e notificações locais nativas do iOS.
 
-- **Local Notifications** nativas do iOS (lockscreen real)
-- **Push Notifications** (APNs) via servidor
-- **Haptics**, **Status Bar**, **Splash Screen**
+## Stack
 
-O código React/TS do site continua no diretório raiz (`src/`). Este wrapper só
-empacota a WebView e expõe os plugins nativos.
+- TanStack Start (Vite) → bundle estático em `.output/public`
+- Capacitor 6 (iOS) → embute o bundle em `capacitor-wrapper/dist`
+- `@capacitor/local-notifications` + `@capacitor/haptics`
 
-## Build local (Mac com Xcode)
+## Build local
 
 ```bash
-# 1. Build do site web (raiz do repo)
+# 1) instala deps web
 npm install
+
+# 2) build do bundle Vite
 npm run build
 
-# 2. Sync com iOS
-npm run cap:sync     # roda npm install + npx cap sync ios em capacitor-wrapper/
-npm run cap:open     # abre Xcode
+# 3) sincroniza com iOS (copia dist + cap sync)
+npm run cap:sync
+
+# 4) abre Xcode
+npm run cap:open
 ```
 
-No Xcode: selecione o time **Hui Yang (3P88EQ69T9)**, Bundle ID
-`app.plantain7502.soybean5714`, Product → Archive.
+No Xcode: selecione um device real, ajuste signing e rode.
 
 ## Build no Codemagic
 
-O `codemagic.yaml` já está configurado para:
+O `codemagic.yaml` já faz tudo automaticamente:
 
-1. Instalar deps do wrapper (`capacitor-wrapper/`)
-2. Rodar `npx cap sync ios`
-3. Injetar `App.entitlements` com `aps-environment=production`
-4. Assinar com o profile **Hotmart** + cert **iPhone Distribution: Hui Yang**
-5. Gerar `.ipa` ad-hoc
+1. `npm install` na raiz
+2. `npm run build` (Vite)
+3. `npm install` em `capacitor-wrapper/`
+4. Copia `.output/public` → `capacitor-wrapper/dist`
+5. `npx cap add ios` (se necessário) + `npx cap sync ios`
+6. `pod install`
+7. Build assinado Ad Hoc (.ipa)
 
-Basta rodar o workflow `ios-ipa` no Codemagic.
+Basta dar push em `main`.
 
-## Notificações locais — como testar
+## Notificações locais
 
-1. Instale o `.ipa` no iPhone
-2. Abra o app — ele pedirá permissão de notificações (janela nativa do iOS)
-3. Toque em **"Notificar iOS"** no app
-4. Bloqueie a tela; em ~3s a notificação aparece na lockscreen real
+- Botão **"Enviar Notificação"** dispara `LocalNotifications.schedule(...)` com:
+  - Título: `Venda realizada com Cartão de Crédito`
+  - Corpo: `Você recebeu: US$ <valor> - HP<10 dígitos>`
+  - `id`, `sound: "default"`, `badge: 1`, agendamento +3s
+- Funciona na lockscreen, banner, Central de Notificações e Dynamic Island.
+- 100% offline, sem servidor.
 
-## Notificações push (APNs) — como testar
+## Configuração
 
-Pré-requisitos:
-- Capability "Push Notifications" habilitada no App ID no Apple Developer
-- Profile "Hotmart" regenerado depois de habilitar a capability
-- Secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`,
-  `APNS_PRODUCTION` configurados no Lovable Cloud
-
-Depois disso o botão **"Enviar"** dispara o push real para todos os
-dispositivos registrados.
+- `appId`: `app.plantain7502.soybean5714`
+- `appName`: `Gucmart`
+- `webDir`: `dist` (assets locais — sem `server.url`)

@@ -1,23 +1,24 @@
 {
-  "name": "vendas-ios-wrapper",
+  "name": "gucmart-ios",
   "version": "1.0.0",
   "private": true,
-  "description": "Shell nativo iOS (Capacitor/WKWebView) que carrega https://ios-push-aura.lovable.app",
+  "description": "Gucmart — build iOS nativo (Capacitor) com assets locais e notificações locais.",
   "scripts": {
     "cap:add:ios": "cap add ios",
-    "cap:sync": "cap sync ios",
+    "cap:copy-web": "node ./scripts/copy-web.mjs",
+    "cap:sync": "npm run cap:copy-web && cap sync ios",
     "cap:open:ios": "cap open ios",
-    "ios:build": "cap sync ios && cap open ios"
+    "ios:build": "npm run cap:sync && cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "^6.0.1",
     "@capacitor/core": "^6.1.2",
-    "@capacitor/ios": "^6.1.2",
-    "@capacitor/status-bar": "^6.0.2",
-    "@capacitor/splash-screen": "^6.0.2",
-    "@capacitor/haptics": "^6.0.1",
-    "@capacitor/local-notifications": "^6.1.0",
     "@capacitor/device": "^6.0.1",
-    "@capacitor/app": "^6.0.1"
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor/ios": "^6.1.2",
+    "@capacitor/local-notifications": "^6.1.0",
+    "@capacitor/splash-screen": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.1.2"

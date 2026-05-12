@@ -80,11 +80,11 @@ function newTx(): Transaction {
 function Dashboard() {
   const [tab, setTab] = useState<TabId>("home");
   const [refreshing, setRefreshing] = useState(false);
-  const [txs, setTxs] = useState<Transaction[]>(() =>
-    Array.from({ length: 5 }, () => newTx()),
-  );
+  // Start empty so SSR markup matches initial client render — fill in effect.
+  const [txs, setTxs] = useState<Transaction[]>([]);
 
   useEffect(() => {
+    setTxs(Array.from({ length: 5 }, () => newTx()));
     if (isNative()) {
       initNotifications().catch((e) => console.error("[notify] init failed", e));
     }
