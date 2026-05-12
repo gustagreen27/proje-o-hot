@@ -4,6 +4,7 @@
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications, type ScheduleOptions } from "@capacitor/local-notifications";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
+import { generateTransactionId, randomSaleAmount } from "./transactionId";
 
 export const isNative = (): boolean => {
   try {
