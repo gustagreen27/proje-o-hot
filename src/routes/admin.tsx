@@ -32,6 +32,10 @@ const TYPES: { value: NotificationType; label: string }[] = [
   { value: "refund", label: "Reembolso" },
 ];
 
+function randomHP() {
+  return `HP${Math.floor(1_000_000_000 + Math.random() * 9_000_000_000)}`;
+}
+
 function AdminPage() {
   const [type, setType] = useState<NotificationType>("credit-card");
   const [value, setValue] = useState("360.24");
@@ -42,6 +46,16 @@ function AdminPage() {
   const [minutesAgo, setMinutesAgo] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [history, setHistory] = useState<IOSNotification[]>([]);
+
+  // Sequência de push real
+  const [seqCount, setSeqCount] = useState(10);
+  const [seqIntervalSec, setSeqIntervalSec] = useState(5);
+  const [seqRandomValue, setSeqRandomValue] = useState(true);
+  const [seqRunning, setSeqRunning] = useState(false);
+  const [seqProgress, setSeqProgress] = useState(0);
+  const seqAbort = useRef(false);
+
+  const sendPushFn = useServerFn(sendPush);
 
   useEffect(() => {
     setHistory(loadHistory());
