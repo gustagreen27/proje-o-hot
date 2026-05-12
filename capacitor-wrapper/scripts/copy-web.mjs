@@ -13,16 +13,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const wrapperRoot = resolve(here, "..");
 const projectRoot = resolve(wrapperRoot, "..");
 
-const candidates = [
-  resolve(projectRoot, ".output/public"),
-  resolve(projectRoot, "dist/client"),
-  resolve(projectRoot, "dist"),
-];
+const candidates = [resolve(projectRoot, "dist")];
 
-const src = candidates.find((p) => existsSync(p));
+const src = candidates.find((p) => existsSync(resolve(p, "index.html")));
 if (!src) {
-  console.error("[cap:copy-web] Nenhum build encontrado. Rode `npm run build` na raiz primeiro.");
-  console.error("Procurei em:\n  - " + candidates.join("\n  - "));
+  console.error("[cap:copy-web] Nenhum build SPA encontrado. Rode `npm run build` na raiz primeiro.");
+  console.error("O Capacitor exige `dist/index.html`. Procurei em:\n  - " + candidates.join("/index.html\n  - ") + "/index.html");
   process.exit(1);
 }
 
