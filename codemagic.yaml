@@ -138,9 +138,13 @@ workflows:
             --scheme "$XCODE_SCHEME" \
             --config "$XCODE_CONFIG" \
             --archive-directory build/ios/archive
+          IPA_PATH=$(ls -t build/ios/ipa/*.ipa | head -1)
+          test -f "$IPA_PATH" || { echo "IPA not found"; exit 1; }
+          mv "$IPA_PATH" build/ios/ipa/hotmart2.ipa
+          test -f build/ios/ipa/hotmart2.ipa
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/ipa/hotmart2.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
