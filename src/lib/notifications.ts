@@ -70,7 +70,7 @@ export function generateRandomNotification(): IOSNotification {
     id: crypto.randomUUID(),
     title: TITLES[type],
     body: `Você recebeu: ${value} - ${hp}`,
-    appName: "Hotmart",
+  appName: ".",
     receivedAt: Date.now(),
     type,
   };
@@ -119,7 +119,7 @@ export function buildCustom(input: {
     id: crypto.randomUUID(),
     title: input.titleOverride?.trim() || TITLES[input.type],
     body: input.bodyOverride?.trim() || `Você recebeu: ${input.value} - ${input.hp}`,
-    appName: "Hotmart",
+    appName: ".",
     receivedAt: input.receivedAt ?? Date.now(),
     type: input.type,
   };
