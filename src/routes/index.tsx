@@ -12,6 +12,13 @@ import {
 } from "@/lib/push-client";
 import { initNativePush, isNativeApp } from "@/lib/native-push-client";
 import {
+  hapticImpact,
+  hapticSuccess,
+  initNotifications,
+  isNative,
+  sendLocalNotification,
+} from "@/lib/NotificationService";
+import {
   registerDeviceToken,
   sendPush,
   subscribePush,
@@ -65,6 +72,8 @@ function LockScreen() {
           if (r.ok) setPushOn(true);
         })
         .catch((e) => console.error("[native-push] init failed", e));
+      // Init local notifications (permissions + listeners) for native shell.
+      initNotifications().catch((e) => console.error("[notify] init failed", e));
     }
     return () => clearInterval(i);
   }, [registerNativeFn]);
@@ -144,6 +153,25 @@ function LockScreen() {
     }
   };
 
+  const sendLocal = async () => {
+    await hapticImpact("medium");
+    if (!isNative()) {
+      toast.error("Notificação local nativa só funciona no app iOS instalado.");
+      return;
+    }
+    const ok = await sendLocalNotification({
+      title: "Nova transação",
+      body: "Você recebeu um novo pagamento.",
+      delayMs: 3000,
+    });
+    if (ok) {
+      await hapticSuccess();
+      toast.success("Notificação agendada (3s) — bloqueie a tela para ver.");
+    } else {
+      toast.error("Permissão de notificação negada.");
+    }
+  };
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="lock-wallpaper" style={{ backgroundImage: `url(${wallpaperUrl})` }} />
@@ -192,6 +220,12 @@ function LockScreen() {
               className="flex items-center gap-1 rounded-full px-3 py-1 text-white/80"
             >
               <Send className="h-3.5 w-3.5" /> Enviar
+            </button>
+            <button
+              onClick={sendLocal}
+              className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-white"
+            >
+              <Bell className="h-3.5 w-3.5" /> Notificar iOS
             </button>
             <button
               onClick={() => setAutoSim((v) => !v)}
