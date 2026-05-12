@@ -5,7 +5,8 @@
  *   - index.html          : <title>, apple-mobile-web-app-title, description meta
  *   - public/manifest.webmanifest : name, short_name, description, theme_color, background_color
  *   - capacitor-wrapper/capacitor.config.ts : appName
- *   - capacitor-wrapper/ios-resources/icon.png + icon-only.png + ios/icon.png <- branding/logo.png
+ *   - downloads cfg.logoUrl (when present) -> branding/logo.png
+ *   - capacitor-wrapper/ios-resources/icon.png + icon-only.png + ios/icon.png + notification-icon.png <- branding/logo.png
  *   - capacitor-wrapper/ios-resources/splash.png <- branding/splash.png
  *   - public/icon-{180,192,512}.png + favicon.ico (regenerated from logo)
  *   - src/assets/platform-logo.jpeg (in-app dashboard avatar)
@@ -15,10 +16,11 @@
  * @capacitor/assets is invoked separately by the build pipeline (codemagic.yaml)
  * to regenerate the iOS AppIcon.appiconset from ios-resources/icon.png.
  */
-import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -32,11 +34,79 @@ const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
 
 const logoSrc = resolve(root, cfg.logo);
 const splashSrc = resolve(root, cfg.splash);
+const sourceLogoSrc = resolve(root, "branding/source-logo.jpeg");
+
+async function downloadLogoFromConfig() {
+  if (!cfg.logoUrl) return;
+  console.log(`[branding] downloading logoUrl -> ${cfg.logo}`);
+  const res = await fetch(cfg.logoUrl, { headers: { "user-agent": "Lovable branding sync" } });
+  if (!res.ok) throw new Error(`[branding] failed to download logoUrl: ${res.status} ${res.statusText}`);
+  const input = Buffer.from(await res.arrayBuffer());
+  const require = createRequire(import.meta.url);
+  const sharp = require("sharp");
+  const png = await sharp(input)
+    .resize(1024, 1024, { fit: "fill" })
+    .removeAlpha()
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+  writeFileSync(logoSrc, png);
+  writeFileSync(sourceLogoSrc, input);
+}
+
+await downloadLogoFromConfig();
+
 if (!existsSync(logoSrc)) throw new Error(`[branding] missing ${cfg.logo}`);
 if (!existsSync(splashSrc)) throw new Error(`[branding] missing ${cfg.splash}`);
 
 const escapeHtml = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+async function writePng(size, dest) {
+  const require = createRequire(import.meta.url);
+  const sharp = require("sharp");
+  const png = await sharp(logoSrc)
+    .resize(size, size, { fit: "fill" })
+    .removeAlpha()
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+  writeFileSync(dest, png);
+}
+
+async function writeIosAppIconSet() {
+  const assetsDir = resolve(root, "capacitor-wrapper/ios/App/App/Assets.xcassets");
+  if (!existsSync(assetsDir)) return;
+  const iconSet = resolve(assetsDir, "AppIcon.appiconset");
+  rmSync(iconSet, { recursive: true, force: true });
+  mkdirSync(iconSet, { recursive: true });
+  const entries = [
+    { idiom: "iphone", size: "20x20", scale: "2x", filename: "AppIcon-20@2x.png", px: 40 },
+    { idiom: "iphone", size: "20x20", scale: "3x", filename: "AppIcon-20@3x.png", px: 60 },
+    { idiom: "iphone", size: "29x29", scale: "2x", filename: "AppIcon-29@2x.png", px: 58 },
+    { idiom: "iphone", size: "29x29", scale: "3x", filename: "AppIcon-29@3x.png", px: 87 },
+    { idiom: "iphone", size: "40x40", scale: "2x", filename: "AppIcon-40@2x.png", px: 80 },
+    { idiom: "iphone", size: "40x40", scale: "3x", filename: "AppIcon-40@3x.png", px: 120 },
+    { idiom: "iphone", size: "60x60", scale: "2x", filename: "AppIcon-60@2x.png", px: 120 },
+    { idiom: "iphone", size: "60x60", scale: "3x", filename: "AppIcon-60@3x.png", px: 180 },
+    { idiom: "ipad", size: "20x20", scale: "1x", filename: "AppIcon-iPad-20@1x.png", px: 20 },
+    { idiom: "ipad", size: "20x20", scale: "2x", filename: "AppIcon-iPad-20@2x.png", px: 40 },
+    { idiom: "ipad", size: "29x29", scale: "1x", filename: "AppIcon-iPad-29@1x.png", px: 29 },
+    { idiom: "ipad", size: "29x29", scale: "2x", filename: "AppIcon-iPad-29@2x.png", px: 58 },
+    { idiom: "ipad", size: "40x40", scale: "1x", filename: "AppIcon-iPad-40@1x.png", px: 40 },
+    { idiom: "ipad", size: "40x40", scale: "2x", filename: "AppIcon-iPad-40@2x.png", px: 80 },
+    { idiom: "ipad", size: "76x76", scale: "1x", filename: "AppIcon-iPad-76@1x.png", px: 76 },
+    { idiom: "ipad", size: "76x76", scale: "2x", filename: "AppIcon-iPad-76@2x.png", px: 152 },
+    { idiom: "ipad", size: "83.5x83.5", scale: "2x", filename: "AppIcon-iPad-83.5@2x.png", px: 167 },
+    { idiom: "ios-marketing", size: "1024x1024", scale: "1x", filename: "AppIcon-512@2x.png", px: 1024 },
+  ];
+  for (const entry of entries) await writePng(entry.px, resolve(iconSet, entry.filename));
+  writeFileSync(resolve(iconSet, "Contents.json"), JSON.stringify({ images: entries.map(({ px, ...entry }) => entry), info: { author: "xcode", version: 1 } }, null, 2) + "\n");
+  const notificationSet = resolve(assetsDir, "NotificationIcon.imageset");
+  rmSync(notificationSet, { recursive: true, force: true });
+  mkdirSync(notificationSet, { recursive: true });
+  await writePng(1024, resolve(notificationSet, "notification-icon.png"));
+  writeFileSync(resolve(notificationSet, "Contents.json"), JSON.stringify({ images: [{ idiom: "universal", filename: "notification-icon.png", scale: "1x" }], info: { author: "xcode", version: 1 } }, null, 2) + "\n");
+  console.log("[branding] wrote AppIcon.appiconset + NotificationIcon.imageset from branding logo");
+}
 
 // ---------- index.html ----------
 {
@@ -85,6 +155,7 @@ const escapeHtml = (s) =>
 // ---------- copy logo + splash into ios-resources ----------
 {
   const iosDir = resolve(root, "capacitor-wrapper/ios-resources");
+  rmSync(iosDir, { recursive: true, force: true });
   mkdirSync(iosDir, { recursive: true });
   mkdirSync(resolve(iosDir, "ios"), { recursive: true });
   copyFileSync(logoSrc, resolve(iosDir, "icon.png"));
@@ -92,11 +163,15 @@ const escapeHtml = (s) =>
   // Keeping both prevents the generated iOS icon from falling back to any template/default asset.
   copyFileSync(logoSrc, resolve(iosDir, "icon-only.png"));
   copyFileSync(logoSrc, resolve(iosDir, "ios/icon.png"));
+  copyFileSync(logoSrc, resolve(iosDir, "notification-icon.png"));
+  copyFileSync(logoSrc, resolve(iosDir, "ios/notification-icon.png"));
   copyFileSync(splashSrc, resolve(iosDir, "splash.png"));
   // dark variant for capacitor-assets (same image, ok for now)
   copyFileSync(splashSrc, resolve(iosDir, "splash-dark.png"));
   console.log("[branding] copied logo+splash -> capacitor-wrapper/ios-resources/");
 }
+
+await writeIosAppIconSet();
 
 // ---------- in-app dashboard logo (used by src/lib/branding.ts default) ----------
 {

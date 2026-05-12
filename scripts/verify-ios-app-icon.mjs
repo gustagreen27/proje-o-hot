@@ -155,6 +155,13 @@ for (const [size, name] of [[180, 'icon-180.png'], [192, 'icon-192.png'], [512, 
   await verifyMatchesSource(file, size, `public/${name}`);
 }
 
+// 3. Explicit notification icon asset used to prevent any native template fallback.
+await verifyMatchesSource(
+  join(dirname(appiconsetDir), 'NotificationIcon.imageset', 'notification-icon.png'),
+  1024,
+  'NotificationIcon.imageset/notification-icon.png',
+);
+
 if (errors.length > 0) {
   console.error('[branding] verification FAILED:');
   for (const e of errors) console.error('  - ' + e);
